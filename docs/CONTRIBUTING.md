@@ -19,8 +19,10 @@ Some more guidelines to follow:
 Clearly documenting the meaning of each dimension in the shape of PyTorch tensors/NumPy arrays/Pandas DataFrames helps prevent errors
 that can be hard to find. The following names are used in docstrings for this purpose:
 
-* `n_examples`: the number of examples in the dataset
-* `n_batch`: the number of examples in the batch
+* `n_examples`: number of examples in the dataset
+* `n_batch`: number of examples in the batch
+* `n_channels`: number of channels per example
+* `n_samples`: number of samples per example
 
 
 

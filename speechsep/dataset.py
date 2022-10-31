@@ -3,7 +3,7 @@ import os
 
 def get_storage_dir():
     storage_dir = os.getenv("LIBRIMIX_STORAGE_DIR")
-    if storage_dir is None:
+    if not storage_dir:
         raise "Set LIBRIMIX_STORAGE_DIR before loading audio files"
     return storage_dir
 
