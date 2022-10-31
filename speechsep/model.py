@@ -17,7 +17,7 @@ class Demucs(nn.Module):
                 DemucsEncoder(1024, 2048),
             ]
         )
-        self.blstm = BilinearLSTM()
+        self.lstm = DemucsLSTM()
         self.decoders = nn.ModuleList(
             [
                 DemucsDecoder(2048, 1024),
@@ -30,23 +30,29 @@ class Demucs(nn.Module):
         )
 
     def forward(self, x):
+        """
+        Forward-pass of the Demucs model. Only n_channels = 1 is supported.
+
+        Args:
+            x: input signal, shape (n_batch, n_channels, n_samples)
+
+        Returns:
+            Separated signal for both speakers, shape (n_batch, 2, n_samples)
+        """
         skip_activations: list[torch.Tensor] = []
 
         for encoder in self.encoders:
             x = encoder(x)
             skip_activations.append(x)
 
-        x = self.blstm(x)
+        x = self.lstm(x)
 
         for decoder in self.decoders:
-            skip_activation = skip_activations.pop()
+            skip_activation = center_trim(skip_activations.pop(), x)
 
-            # Center-trim skip activation to match x
-            skip_activation = skip_activation.narrow(
-                -1, (skip_activation.shape[-1] - x.shape[-1]) // 2, x.shape[-1]
-            )
-
-            x = torch.cat([x, skip_activation])
+            # x = torch.cat([x, skip_activation], dim=1)
+            # Demucs adds instead of concatenates the skip activations, contrary to U-net
+            x += skip_activation
             x = decoder(x)
 
         return x
@@ -67,7 +73,7 @@ class DemucsEncoder(nn.Module):
         return x
 
 
-class BilinearLSTM(nn.Module):
+class DemucsLSTM(nn.Module):
     def __init__(self):
         super().__init__()
 
@@ -76,7 +82,7 @@ class BilinearLSTM(nn.Module):
 
     def forward(self, x):
         x = x.permute(2, 0, 1)  # move sequence first
-        x = self.lstm(x)[0]
+        x, _ = self.lstm(x)
         x = self.linear(x)
         x = x.permute(1, 2, 0)
         return x
@@ -99,7 +105,22 @@ class DemucsDecoder(nn.Module):
         return x
 
 
-def _generate_test_data():
+def center_trim(to_trim: torch.Tensor, target: torch.Tensor, dim=-1):
+    """
+    Trims a tensor to match the length of another, removing equally from both sides.
+
+    Args:
+        to_trim: the tensor to trim
+        target: the tensor whose length to match
+        dim: the dimension in which to trim
+
+    Returns:
+        The trimmed to_trim tensor
+    """
+    return to_trim.narrow(dim, (to_trim.shape[dim] - target.shape[dim]) // 2, target.shape[dim])
+
+
+def _generate_test_data(pad_to_valid=False):
     import numpy as np
 
     example_length = 8
@@ -112,16 +133,19 @@ def _generate_test_data():
     speaker1 = torch.from_numpy(speaker1).view(1, 1, len(ts)).float()
     speaker2 = torch.from_numpy(speaker2).view(1, 1, len(ts)).float()
 
-    target_n_samples = int(valid_length(len(ts)) + sample_rate)
-    padding = max(0, target_n_samples - len(ts))
+    if pad_to_valid:
+        target_n_samples = int(valid_length(len(ts)))
+        padding = max(0, target_n_samples - len(ts))
 
-    # speaker1 = F.pad(speaker1, (0, padding))
-    # speaker2 = F.pad(speaker2, (0, padding))
+        speaker1 = F.pad(speaker1, (0, padding))
+        speaker2 = F.pad(speaker2, (0, padding))
 
+    # Mix speaker signals
     x = speaker1 + speaker2
-    y = torch.vstack([speaker1, speaker2])
+    # Concatenate speaker signals
+    y_true = torch.cat([speaker1, speaker2], dim=1)
 
-    return x, y
+    return x, y_true
 
 
 # From https://github.com/facebookresearch/demucs/blob/v2/demucs/model.py#L145
@@ -149,8 +173,12 @@ def valid_length(length):
 
 
 if __name__ == "__main__":
-    x, y = _generate_test_data()
+    x, y_true = _generate_test_data(True)
     model = Demucs()
 
-    x = model.forward(x)
-    print(x.shape)
+    y_pred = model.forward(x)
+    y_true = center_trim(y_true, y_pred)
+    assert y_true.shape == y_pred.shape
+    print(y_true.shape)
+
+    print(F.mse_loss(y_pred, y_true))
