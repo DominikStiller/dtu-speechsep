@@ -1,6 +1,10 @@
 # Speech separation in the waveform domain
 This is the repository for the [DTU 02456 Deep Learning](https://kurser.dtu.dk/course/02456) project. The aim is to implement and apply deep neural networks to source separation for speech mixtures or polyphonic music in the waveform domain. The project is supervised by Prof. Bjørn Sand Jensen (Department of Applied Mathematics and Computer Science).
 
+Links:
+* See the [synopsis](docs/synopsis.pdf) for the outline of the project
+* See the [developer's guidelines](docs/CONTRIBUTING.md) if you want to contribute
+
 
 ## Setup
 * Ensure Python 3.9 is installed
