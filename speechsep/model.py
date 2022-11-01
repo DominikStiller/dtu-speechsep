@@ -1,6 +1,6 @@
 import torch
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 
 
 class Demucs(nn.Module):
@@ -48,7 +48,7 @@ class Demucs(nn.Module):
         x = self.lstm(x)
 
         for decoder in self.decoders:
-            skip_activation = center_trim(skip_activations.pop(), x)
+            skip_activation = center_trim(skip_activations.pop(), target=x)
 
             # x = torch.cat([x, skip_activation], dim=1)
             # Demucs adds instead of concatenates the skip activations, contrary to U-net
@@ -120,34 +120,6 @@ def center_trim(to_trim: torch.Tensor, target: torch.Tensor, dim=-1):
     return to_trim.narrow(dim, (to_trim.shape[dim] - target.shape[dim]) // 2, target.shape[dim])
 
 
-def _generate_test_data(pad_to_valid=False):
-    import numpy as np
-
-    example_length = 8
-    sample_rate = 8e3
-
-    ts = np.arange(0, example_length, 1 / sample_rate)
-    speaker1 = np.sin(5 * ts)
-    speaker2 = np.sin(11 * ts)
-
-    speaker1 = torch.from_numpy(speaker1).view(1, 1, len(ts)).float()
-    speaker2 = torch.from_numpy(speaker2).view(1, 1, len(ts)).float()
-
-    if pad_to_valid:
-        target_n_samples = int(valid_length(len(ts)))
-        padding = max(0, target_n_samples - len(ts))
-
-        speaker1 = F.pad(speaker1, (0, padding))
-        speaker2 = F.pad(speaker2, (0, padding))
-
-    # Mix speaker signals
-    x = speaker1 + speaker2
-    # Concatenate speaker signals
-    y_true = torch.cat([speaker1, speaker2], dim=1)
-
-    return x, y_true
-
-
 # From https://github.com/facebookresearch/demucs/blob/v2/demucs/model.py#L145
 def valid_length(length):
     import math
@@ -173,11 +145,13 @@ def valid_length(length):
 
 
 if __name__ == "__main__":
-    x, y_true = _generate_test_data(True)
+    from speechsep.mock_dataset import generate_mock_data
+
+    x, y_true = generate_mock_data(True)
     model = Demucs()
 
     y_pred = model.forward(x)
-    y_true = center_trim(y_true, y_pred)
+    y_true = center_trim(y_true, target=y_pred)
     assert y_true.shape == y_pred.shape
     print(y_true.shape)
 
