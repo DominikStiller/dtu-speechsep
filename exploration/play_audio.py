@@ -1,7 +1,7 @@
 import torchaudio
 
-from speechsep.plotting import plot_waveform, plot_specgram
 from speechsep.dataset import get_audio_path
+from speechsep.plotting import plot_waveform, plot_specgram
 
 # %%
 filename = get_audio_path("8842-304647-0012_3752-4943-0024", "dev")

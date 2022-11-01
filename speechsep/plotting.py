@@ -1,7 +1,6 @@
-import torch
 import matplotlib.pyplot as plt
 import seaborn as sb
-
+import torch
 
 # Initialize seaborn formatting once module is loaded
 sb.set(
