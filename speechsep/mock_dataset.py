@@ -49,24 +49,28 @@ class SinusoidDataset(Dataset):
         self.ts = np.arange(0, self.n_samples_valid / sample_rate, 1 / sample_rate)
         self._ts_unpadded = np.arange(0, self.n_samples / sample_rate, 1 / sample_rate)
 
+        # Amplitude
+        self.amps = 1 + self.random.random((2, n)) * 2
+        # Angular frequency
+        self.omegas = 1 + self.random.random((2, n)) * 30
+        # Ensure that sinusoids are below Nyquist frequency
+        assert self.omegas.max().max() / (2 * np.pi) < self.sample_rate / 2
+        # Initial phase
+        self.phis = self.random.random((2, n)) * 2 * np.pi
+
     def __len__(self):
         return self.n
 
+    def _generate_sinusoid(self, idx, speaker, ts):
+        amp = self.amps[speaker, idx]
+        omega = self.omegas[speaker, idx]
+        phi = self.phis[speaker, idx]
+        return amp * np.sin(omega * ts + phi)
+
     def __getitem__(self, idx):
-        amp1 = 1 + self.random.random() * 2
-        amp2 = 1 + self.random.random() * 2
-        omega1 = 1 + self.random.random() * 30
-        omega2 = 1 + self.random.random() * 30
-        phi1 = self.random.random() * 2 * np.pi
-        phi2 = self.random.random() * 2 * np.pi
-
-        # Ensure that sinusoids are below Nyquist frequency
-        assert omega1 / (2 * np.pi) < self.sample_rate / 2
-        assert omega2 / (2 * np.pi) < self.sample_rate / 2
-
         if self.pad_to_valid:
-            speaker1 = amp1 * np.sin(omega1 * self._ts_unpadded + phi1)
-            speaker2 = amp2 * np.sin(omega2 * self._ts_unpadded + phi2)
+            speaker1 = self._generate_sinusoid(idx, 0, self._ts_unpadded)
+            speaker2 = self._generate_sinusoid(idx, 1, self._ts_unpadded)
 
             delta = int(self.n_samples_valid - self.n_samples)
             padding_left = max(0, delta) // 2
@@ -77,8 +81,8 @@ class SinusoidDataset(Dataset):
             assert speaker1.shape[-1] == self.n_samples_valid
             assert speaker2.shape[-1] == self.n_samples_valid
         else:
-            speaker1 = amp1 * np.sin(omega1 * self.ts + phi1)
-            speaker2 = amp2 * np.sin(omega2 * self.ts + phi2)
+            speaker1 = self._generate_sinusoid(idx, 0, self.ts)
+            speaker2 = self._generate_sinusoid(idx, 1, self.ts)
 
         speaker1 = torch.from_numpy(speaker1).view(1, -1).float()
         speaker2 = torch.from_numpy(speaker2).view(1, -1).float()
