@@ -7,17 +7,29 @@ from speechsep.model import valid_n_samples
 
 
 class SinusoidDataset(Dataset):
+    """
+    A dataset of sinusoids with random amplitude, frequency and phase.
+
+    Examples can be padded or extended to the next valid number of samples
+    that is compatible with the encoder-decoder structure of the Demucs model.
+    For a more detailed description, see :func:`speechsep.model.valid_n_samples`.
+    """
+
     def __init__(
         self, n, example_length=8, sample_rate=8e3, pad_to_valid=False, extend_to_valid=False
     ):
         """
+        Initialize a sinusoid dataset.
+
+        If neither `pad_to_valid` or `extend_to_valid` is given, the number of
+        samples may be invalid for Demucs.
 
         Args:
-            n:
-            example_length:
-            sample_rate:
-            pad_to_valid: Use for evaluation
-            extend_to_valid: Use for training
+            n: number of examples
+            example_length: length of each example [s]
+            sample_rate: sample rate [Hz]
+            pad_to_valid: pad with 0s to valid number of samples (for evaluation)
+            extend_to_valid: extend sinusoid to valid number of samples(for training)
         """
         self.n = n
         self.random = default_rng()
