@@ -2,6 +2,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
+from speechsep.util import center_trim
+
 
 class Demucs(nn.Module):
     def __init__(self):
@@ -28,6 +30,7 @@ class Demucs(nn.Module):
                 DemucsDecoder(64, 2, use_activation=False),
             ]
         )
+        # TODO rescale initial weights
 
     def forward(self, x):
         """
@@ -52,7 +55,7 @@ class Demucs(nn.Module):
 
             # x = torch.cat([x, skip_activation], dim=1)
             # Demucs adds instead of concatenates the skip activations, contrary to U-net
-            x += skip_activation
+            x = x + skip_activation
             x = decoder(x)
 
         return x
@@ -105,23 +108,25 @@ class DemucsDecoder(nn.Module):
         return x
 
 
-def center_trim(to_trim: torch.Tensor, target: torch.Tensor, dim=-1):
+# From https://github.com/facebookresearch/demucs/blob/v2/demucs/model.py#L145
+def valid_n_samples(n_samples):
     """
-    Trims a tensor to match the length of another, removing equally from both sides.
+    Return the nearest valid number of samples to use with the model so that
+    there is no time steps left over in a convolutions, e.g. for all
+    layers, size of the input - kernel_size % stride = 0.
+
+    If the mixture has a valid number of samples, the estimated sources can
+    be center trimmed to match.
+
+    For training, extracts should have a valid number of samples. For
+    evaluation on full signals we recommend padding with zeros.
 
     Args:
-        to_trim: the tensor to trim
-        target: the tensor whose length to match
-        dim: the dimension in which to trim
+        n_samples: the original number of samples
 
     Returns:
-        The trimmed to_trim tensor
+        The nearest valid number of samples
     """
-    return to_trim.narrow(dim, (to_trim.shape[dim] - target.shape[dim]) // 2, target.shape[dim])
-
-
-# From https://github.com/facebookresearch/demucs/blob/v2/demucs/model.py#L145
-def valid_length(length):
     import math
 
     resample = False
@@ -131,23 +136,27 @@ def valid_length(length):
     context = 3
 
     if resample:
-        length *= 2
+        n_samples *= 2
     for _ in range(depth):
-        length = math.ceil((length - kernel_size) / stride) + 1
-        length = max(1, length)
-        length += context - 1
+        n_samples = math.ceil((n_samples - kernel_size) / stride) + 1
+        n_samples = max(1, n_samples)
+        n_samples += context - 1
     for _ in range(depth):
-        length = (length - 1) * stride + kernel_size
+        n_samples = (n_samples - 1) * stride + kernel_size
 
     if resample:
-        length = math.ceil(length / 2)
-    return int(length)
+        n_samples = math.ceil(n_samples / 2)
+    return int(n_samples)
 
 
 if __name__ == "__main__":
-    from speechsep.mock_dataset import generate_mock_data
+    from speechsep.mock_dataset import SinusoidDataset
+    from torch.utils.data import DataLoader
 
-    x, y_true = generate_mock_data(True)
+    train_dataloader = DataLoader(
+        SinusoidDataset(1000, example_length=1, extend_to_valid=True), batch_size=4
+    )
+    x, y_true = next(iter(train_dataloader))
     model = Demucs()
 
     y_pred = model.forward(x)
@@ -155,4 +164,6 @@ if __name__ == "__main__":
     assert y_true.shape == y_pred.shape
     print(y_true.shape)
 
-    print(F.mse_loss(y_pred, y_true))
+    loss = F.mse_loss(y_pred, y_true)
+    print(loss)
+    loss.backward()

@@ -15,3 +15,4 @@ Links:
 
 ## Development
 * Format code using `black .` in project directory before committing
+* Run all code in the project root directory so that paths relative to the current working directory work as intended
