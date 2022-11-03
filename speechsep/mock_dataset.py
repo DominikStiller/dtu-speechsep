@@ -53,7 +53,6 @@ class SinusoidDataset(Dataset):
         return self.n
 
     def __getitem__(self, idx):
-        self.random = default_rng(24)
         amp1 = 1 + self.random.random() * 2
         amp2 = 1 + self.random.random() * 2
         omega1 = 1 + self.random.random() * 30

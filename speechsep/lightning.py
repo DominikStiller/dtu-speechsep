@@ -40,8 +40,9 @@ if __name__ == "__main__":
     from torch.utils.data import DataLoader
     import matplotlib.pyplot as plt
 
-    train = False
+    train = True
     checkpoint_path = "data/lightning_logs/version_5/checkpoints/epoch=1-step=32.ckpt"
+
     model = LitDemucs()
 
     if train:
@@ -49,7 +50,12 @@ if __name__ == "__main__":
             SinusoidDataset(128, example_length=1, extend_to_valid=True), batch_size=8
         )
 
-        trainer = pl.Trainer(max_epochs=5, log_every_n_steps=8, default_root_dir="data/")
+        trainer = pl.Trainer(
+            max_epochs=2,
+            log_every_n_steps=8,
+            default_root_dir="data/",
+            # accelerator="gpu"
+        )
         trainer.fit(model=model, train_dataloaders=train_dataloader)
     else:
         dataloader = DataLoader(SinusoidDataset(1, example_length=1, pad_to_valid=True))
