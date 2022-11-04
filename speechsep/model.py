@@ -30,7 +30,11 @@ class Demucs(nn.Module):
                 DemucsDecoder(64, 2, use_activation=False),
             ]
         )
-        # TODO rescale initial weights
+
+        # Rescale initial weights
+        for sub in self.modules():
+            if isinstance(sub, (nn.Conv1d, nn.ConvTranspose1d)):
+                rescale_conv(sub)
 
     def forward(self, x):
         """
@@ -106,6 +110,15 @@ class DemucsDecoder(nn.Module):
         if self.use_activation:
             x = F.relu(x)
         return x
+
+
+# From https://github.com/facebookresearch/demucs/blob/v2/demucs/model.py#L29
+def rescale_conv(conv, reference=0.1):
+    std = conv.weight.std().detach()
+    scale = (std / reference) ** 0.5
+    conv.weight.data /= scale
+    if conv.bias is not None:
+        conv.bias.data /= scale
 
 
 # From https://github.com/facebookresearch/demucs/blob/v2/demucs/model.py#L145
