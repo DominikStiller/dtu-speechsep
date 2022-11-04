@@ -41,7 +41,7 @@ if __name__ == "__main__":
     from torch.utils.data import DataLoader
     import os
 
-    train = False
+    train = True
 
     is_hpc = "LSF_ENVDIR" in os.environ
     use_gpu = torch.cuda.is_available()
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         }
     else:
         dataloader_args = {"batch_size": 1}
-        trainer_args = {"max_epochs": 2}
+        trainer_args = {"max_epochs": 10}
 
     model = LitDemucs()
 
@@ -72,10 +72,10 @@ if __name__ == "__main__":
                              enable_checkpointing=False)
         trainer.fit(model=model, train_dataloaders=train_dataloader)
     else:
-        dataloader = DataLoader(SinusoidDataset(1, example_length=1, pad_to_valid=True))
-        model.load_from_checkpoint(test_checkpoint_path)
+        #dataloader = DataLoader(SinusoidDataset(1, example_length=1, pad_to_valid=True))
+        #model.load_from_checkpoint(test_checkpoint_path)
 
-        x, y = next(iter(dataloader))
+        x, y = next(iter(train_dataloader))
         y_pred = model.forward(x)
         y = center_trim(y, target=y_pred)
 
