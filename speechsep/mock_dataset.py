@@ -16,7 +16,7 @@ class SinusoidDataset(Dataset):
     """
 
     def __init__(
-        self, n, example_length=8, sample_rate=8e3, pad_to_valid=False, extend_to_valid=False
+        self, n, example_length=8, sample_rate=8e3, pad_to_valid=False, extend_to_valid=False, seed=42
     ):
         """
         Initialize a sinusoid dataset.
@@ -30,9 +30,10 @@ class SinusoidDataset(Dataset):
             sample_rate: sample rate [Hz]
             pad_to_valid: pad with 0s to valid number of samples (for evaluation)
             extend_to_valid: extend sinusoid to valid number of samples(for training)
+            seed: random seed for amplitude, frequency and phase
         """
         self.n = n
-        self.random = default_rng(42)
+        self.random = default_rng(seed)
 
         if pad_to_valid and extend_to_valid:
             raise "Cannot use both pad_to_valid and extend_to_valid"
