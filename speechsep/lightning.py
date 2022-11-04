@@ -39,22 +39,34 @@ if __name__ == "__main__":
     from speechsep.mock_dataset import SinusoidDataset
     from torch.utils.data import DataLoader
     import matplotlib.pyplot as plt
+    import os
 
-    train = True
-    checkpoint_path = "data/lightning_logs/version_5/checkpoints/epoch=1-step=32.ckpt"
+    train = False
+    is_hpc = "LSF_ENVDIR" in os.environ
+    use_gpu = is_hpc and torch.cuda.is_available()
+    checkpoint_path = "data/lightning_logs/version_4/checkpoints/epoch=19-step=1280.ckpt"
+
+    dataloader_args = {}
+    trainer_args = {}
+    if use_gpu:
+        dataloader_args = {"num_workers": 4, "persistent_workers": True}
+        trainer_args = {
+            "accelerator": "gpu",
+            "devices": 1,
+            "auto_select_gpus": True,
+        }
 
     model = LitDemucs()
 
     if train:
         train_dataloader = DataLoader(
-            SinusoidDataset(128, example_length=1, extend_to_valid=True), batch_size=8
+            SinusoidDataset(2048, example_length=1, extend_to_valid=True),
+            batch_size=16,
+            **dataloader_args
         )
 
         trainer = pl.Trainer(
-            max_epochs=2,
-            log_every_n_steps=8,
-            default_root_dir="data/",
-            # accelerator="gpu"
+            max_epochs=20, log_every_n_steps=32, default_root_dir="data/", **trainer_args
         )
         trainer.fit(model=model, train_dataloaders=train_dataloader)
     else:
