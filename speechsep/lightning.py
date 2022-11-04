@@ -69,8 +69,8 @@ if __name__ == "__main__":
         trainer = pl.Trainer(log_every_n_steps=32, default_root_dir="data/", **trainer_args)
         trainer.fit(model=model, train_dataloaders=train_dataloader)
     else:
-        dataloader = DataLoader(SinusoidDataset(1, example_length=1, pad_to_valid=True))
-        model.load_from_checkpoint(test_checkpoint_path)
+        dataloader = DataLoader(SinusoidDataset(2, example_length=1, extend_to_valid=True))
+        model = LitDemucs.load_from_checkpoint(test_checkpoint_path)
 
         x, y = next(iter(dataloader))
         y_pred = model.forward(x)
