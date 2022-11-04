@@ -16,7 +16,13 @@ class SinusoidDataset(Dataset):
     """
 
     def __init__(
-        self, n, example_length=8, sample_rate=8e3, pad_to_valid=False, extend_to_valid=False, seed=42
+        self,
+        n,
+        example_length=8,
+        sample_rate=8e3,
+        pad_to_valid=False,
+        extend_to_valid=False,
+        seed=42,
     ):
         """
         Initialize a sinusoid dataset.

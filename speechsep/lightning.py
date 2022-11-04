@@ -44,8 +44,13 @@ if __name__ == "__main__":
 
     train = False
     use_gpu = False
-    test_checkpoint_path = "data/lightning_logs/version_10/checkpoints/epoch=49-step=1600.ckpt"
 
+    # train_checkpoint_path = None
+    train_checkpoint_path = "data/lightning_logs/version_12/checkpoints/epoch=49-step=15650.ckpt"
+    test_checkpoint_path = "data/lightning_logs/version_10/checkpoints/epoch=49-step=1600.ckpt"
+    # test_checkpoint_path = "data/lightning_logs/version_14/checkpoints/epoch=99-step=200.ckpt"
+
+    # Decide whether execution is on HPC node and if GPU should be used
     is_hpc = "LSF_ENVDIR" in os.environ
     if is_hpc:
         train = True
@@ -55,11 +60,12 @@ if __name__ == "__main__":
         # On other servers/computers, use GPU only if desired and available
         use_gpu = use_gpu and torch.cuda.is_available()
 
+    # Determine training configuration based on HPC/GPU
     if is_hpc and use_gpu:
         dataloader_args = {"batch_size": 16, "num_workers": 4, "persistent_workers": True}
         trainer_args = {
-            "max_epochs": 50,
-            "log_every_n_steps": 32,
+            "max_epochs": 150,
+            "log_every_n_steps": 10,
             "accelerator": "gpu",
             "devices": 2,
             "auto_select_gpus": True,
@@ -77,16 +83,16 @@ if __name__ == "__main__":
 
     if train:
         train_dataloader = DataLoader(
-            SinusoidDataset(2, example_length=1, extend_to_valid=True), **dataloader_args
+            SinusoidDataset(10000, example_length=1, extend_to_valid=True), **dataloader_args
         )
-        checkpoint_callback = ModelCheckpoint(every_n_epochs=100)
+        checkpoint_callback = ModelCheckpoint(every_n_epochs=5)
 
         trainer = pl.Trainer(
-            default_root_dir="data/",
-            callbacks=[checkpoint_callback],
-            **trainer_args
+            default_root_dir="data/", callbacks=[checkpoint_callback], **trainer_args
         )
-        trainer.fit(model=LitDemucs(), train_dataloaders=train_dataloader)
+        trainer.fit(
+            model=LitDemucs(), train_dataloaders=train_dataloader, ckpt_path=train_checkpoint_path
+        )
     else:
         dataloader = DataLoader(SinusoidDataset(2, example_length=1, extend_to_valid=True))
         model = LitDemucs.load_from_checkpoint(test_checkpoint_path)
