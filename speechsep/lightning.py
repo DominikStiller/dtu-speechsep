@@ -44,29 +44,32 @@ if __name__ == "__main__":
     train = False
 
     is_hpc = "LSF_ENVDIR" in os.environ
-    use_gpu = is_hpc and torch.cuda.is_available()
+    use_gpu = torch.cuda.is_available()
     test_checkpoint_path = "data/lightning_logs/version_4/checkpoints/epoch=19-step=1280.ckpt"
 
     if use_gpu:
-        dataloader_args = {"batch_size": 16, "num_workers": 4, "persistent_workers": True}
+        dataloader_args = {"batch_size": 1, "num_workers": 4, "persistent_workers": True}
         trainer_args = {
-            "max_epochs": 20,
+            "max_epochs": 100,
             "accelerator": "gpu",
             "devices": 1,
             "auto_select_gpus": True,
         }
     else:
-        dataloader_args = {"batch_size": 4}
+        dataloader_args = {"batch_size": 1}
         trainer_args = {"max_epochs": 2}
 
     model = LitDemucs()
 
     if train:
         train_dataloader = DataLoader(
-            SinusoidDataset(2048, example_length=1, extend_to_valid=True), **dataloader_args
+            SinusoidDataset(2, example_length=1, extend_to_valid=True), **dataloader_args
         )
 
-        trainer = pl.Trainer(log_every_n_steps=32, default_root_dir="data/", **trainer_args)
+        trainer = pl.Trainer(log_every_n_steps=32,
+                             default_root_dir="data/",
+                             **trainer_args,
+                             enable_checkpointing=False)
         trainer.fit(model=model, train_dataloaders=train_dataloader)
     else:
         dataloader = DataLoader(SinusoidDataset(1, example_length=1, pad_to_valid=True))
