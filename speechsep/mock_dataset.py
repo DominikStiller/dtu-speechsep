@@ -13,6 +13,9 @@ class SinusoidDataset(Dataset):
     Examples can be padded or extended to the next valid number of samples
     that is compatible with the encoder-decoder structure of the Demucs model.
     For a more detailed description, see :func:`speechsep.model.valid_n_samples`.
+
+    For two sinusoid datasets of differing lengths, the first n examples will be
+    identical.
     """
 
     def __init__(
@@ -39,7 +42,6 @@ class SinusoidDataset(Dataset):
             seed: random seed for amplitude, frequency and phase
         """
         self.n = n
-        self.random = default_rng(seed)
 
         if pad_to_valid and extend_to_valid:
             raise "Cannot use both pad_to_valid and extend_to_valid"
@@ -57,21 +59,22 @@ class SinusoidDataset(Dataset):
         self._ts_unpadded = np.arange(0, self.n_samples / sample_rate, 1 / sample_rate)
 
         # Amplitude
-        self.amps = 1 + self.random.random((2, n)) * 2
+        self.amps = 1 + default_rng(seed).random((n, 2)) * 2
         # Angular frequency
-        self.omegas = 1 + self.random.random((2, n)) * 30
+        self.omegas = 1 + default_rng(seed + 1).random((n, 2)) * 30
+        # Initial phase
+        self.phis = default_rng(seed + 2).random((n, 2)) * 2 * np.pi
+
         # Ensure that sinusoids are below Nyquist frequency
         assert self.omegas.max().max() / (2 * np.pi) < self.sample_rate / 2
-        # Initial phase
-        self.phis = self.random.random((2, n)) * 2 * np.pi
 
     def __len__(self):
         return self.n
 
     def _generate_sinusoid(self, idx, speaker, ts):
-        amp = self.amps[speaker, idx]
-        omega = self.omegas[speaker, idx]
-        phi = self.phis[speaker, idx]
+        amp = self.amps[idx, speaker]
+        omega = self.omegas[idx, speaker]
+        phi = self.phis[idx, speaker]
         return amp * np.sin(omega * ts + phi)
 
     def __getitem__(self, idx):
@@ -103,7 +106,8 @@ class SinusoidDataset(Dataset):
 
 
 if __name__ == "__main__":
-    dataset = SinusoidDataset(12, example_length=1, extend_to_valid=True)
+    dataset = SinusoidDataset(10, example_length=1, extend_to_valid=True)
+
     x, y = dataset[0]
     print(x.shape)
     print(y.shape)
