@@ -32,7 +32,7 @@ class SinusoidDataset(Dataset):
             extend_to_valid: extend sinusoid to valid number of samples(for training)
         """
         self.n = n
-        self.random = default_rng()
+        self.random = default_rng(42)
 
         if pad_to_valid and extend_to_valid:
             raise "Cannot use both pad_to_valid and extend_to_valid"
