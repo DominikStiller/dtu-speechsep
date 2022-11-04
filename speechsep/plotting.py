@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sb
 import torch
 
@@ -31,3 +32,33 @@ def plot_specgram(waveform, sample_rate):
 
     plt.specgram(waveform, Fs=sample_rate)
     plt.show(block=False)
+
+
+def plot_separated_with_truth(y: torch.Tensor, y_pred: torch.Tensor, ts: np.ndarray, idx=0):
+    """
+    Plot the separated signal on top of the ground truth.
+
+    Args:
+        y: ground truth, shape (n_batch, n_channels, n_samples)
+        y_pred: separated signal, shape (n_batch, n_channels, n_samples)
+        ts: time steps
+        idx: example index within batch
+
+    Returns:
+
+    """
+    fig, axs = plt.subplots(2, 1, tight_layout=True)
+
+    ax = axs[0]
+    ax.plot(ts, y_pred[idx, 0], label="Prediction")
+    ax.plot(ts, y[idx, 0], label="Ground truth")
+    ax.set_title("Speaker 1")
+    ax.legend()
+
+    ax = axs[1]
+    ax.plot(ts, y_pred[idx, 1], label="Prediction")
+    ax.plot(ts, y[idx, 1], label="Ground truth")
+    ax.set_title("Speaker 2")
+    ax.legend()
+
+    plt.show()
