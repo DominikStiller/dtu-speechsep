@@ -45,10 +45,10 @@ if __name__ == "__main__":
     train = False
     use_gpu = False
 
-    # train_checkpoint_path = None
-    train_checkpoint_path = "data/lightning_logs/version_12/checkpoints/epoch=49-step=15650.ckpt"
-    test_checkpoint_path = "data/lightning_logs/version_10/checkpoints/epoch=49-step=1600.ckpt"
-    # test_checkpoint_path = "data/lightning_logs/version_14/checkpoints/epoch=99-step=200.ckpt"
+    train_checkpoint_path = None
+    # train_checkpoint_path = "data/lightning_logs/version_12/checkpoints/epoch=49-step=15650.ckpt"
+    # test_checkpoint_path = "data/lightning_logs/version_15/checkpoints/epoch=44-step=2880.ckpt"
+    test_checkpoint_path = "data/lightning_logs/version_16/checkpoints/epoch=49-step=6400.ckpt"
 
     # Decide whether execution is on HPC node and if GPU should be used
     is_hpc = "LSF_ENVDIR" in os.environ
@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
     if train:
         train_dataloader = DataLoader(
-            SinusoidDataset(10000, example_length=1, extend_to_valid=True), **dataloader_args
+            SinusoidDataset(4096 * 2, example_length=1, extend_to_valid=True), **dataloader_args
         )
         checkpoint_callback = ModelCheckpoint(every_n_epochs=5)
 
@@ -94,15 +94,20 @@ if __name__ == "__main__":
             model=LitDemucs(), train_dataloaders=train_dataloader, ckpt_path=train_checkpoint_path
         )
     else:
-        dataloader = DataLoader(SinusoidDataset(2, example_length=1, extend_to_valid=True))
         model = LitDemucs.load_from_checkpoint(test_checkpoint_path)
 
-        x, y = next(iter(dataloader))
+        dataloader = DataLoader(SinusoidDataset(5, example_length=1, extend_to_valid=True))
+        ts = dataloader.dataset.ts
+        dataloader = iter(dataloader)
+
+        x, y = next(dataloader)
+        x, y = next(dataloader)
+        x, y = next(dataloader)
         y_pred = model.forward(x)
-        y = center_trim(y, target=y_pred)
 
         plot_separated_with_truth(
-            y.detach(),
+            center_trim(x, target=y_pred).detach(),
+            center_trim(y, target=y_pred).detach(),
             y_pred.detach(),
-            center_trim(torch.from_numpy(dataloader.dataset.ts), target=y_pred),
+            center_trim(torch.from_numpy(ts), target=y_pred),
         )
