@@ -20,7 +20,7 @@ class LitDemucs(pl.LightningModule):
         x, y = batch
         y_pred = self(x)
         y = center_trim(y, target=y_pred)
-        loss = F.mse_loss(y_pred, y)
+        loss = F.l1_loss(y_pred, y)
         self.log("train_loss", loss)
         return loss
 
@@ -28,7 +28,7 @@ class LitDemucs(pl.LightningModule):
         x, y = batch
         y_pred = self(x)
         y = center_trim(y, target=y_pred)
-        loss = F.mse_loss(y_pred, y)
+        loss = F.l1_loss(y_pred, y)
         self.log("test_loss", loss)
 
     def configure_optimizers(self):
@@ -45,10 +45,9 @@ if __name__ == "__main__":
     train = False
     use_gpu = False
 
-    train_checkpoint_path = None
-    # train_checkpoint_path = "data/lightning_logs/version_12/checkpoints/epoch=49-step=15650.ckpt"
-    # test_checkpoint_path = "data/lightning_logs/version_15/checkpoints/epoch=44-step=2880.ckpt"
-    test_checkpoint_path = "data/lightning_logs/version_16/checkpoints/epoch=49-step=6400.ckpt"
+    # train_checkpoint_path = None
+    train_checkpoint_path = "data/lightning_logs/version_18/checkpoints/epoch=99-step=25600.ckpt"
+    test_checkpoint_path = "data/lightning_logs/version_17/checkpoints/epoch=49-step=3200.ckpt"
 
     # Decide whether execution is on HPC node and if GPU should be used
     is_hpc = "LSF_ENVDIR" in os.environ
@@ -62,7 +61,7 @@ if __name__ == "__main__":
 
     # Determine training configuration based on HPC/GPU
     if is_hpc and use_gpu:
-        dataloader_args = {"batch_size": 16, "num_workers": 4, "persistent_workers": True}
+        dataloader_args = {"batch_size": 64, "num_workers": 4, "persistent_workers": True}
         trainer_args = {
             "max_epochs": 150,
             "log_every_n_steps": 10,
@@ -83,7 +82,7 @@ if __name__ == "__main__":
 
     if train:
         train_dataloader = DataLoader(
-            SinusoidDataset(4096 * 2, example_length=1, extend_to_valid=True), **dataloader_args
+            SinusoidDataset(4096 * 8, example_length=1, extend_to_valid=True), **dataloader_args
         )
         checkpoint_callback = ModelCheckpoint(every_n_epochs=5)
 
@@ -96,13 +95,12 @@ if __name__ == "__main__":
     else:
         model = LitDemucs.load_from_checkpoint(test_checkpoint_path)
 
-        dataloader = DataLoader(SinusoidDataset(5, example_length=1, extend_to_valid=True))
+        dataloader = DataLoader(SinusoidDataset(5, example_length=1, extend_to_valid=True, seed=45))
         ts = dataloader.dataset.ts
         dataloader = iter(dataloader)
 
-        x, y = next(dataloader)
-        x, y = next(dataloader)
-        x, y = next(dataloader)
+        for _ in range(5):
+            x, y = next(dataloader)
         y_pred = model.forward(x)
 
         plot_separated_with_truth(
