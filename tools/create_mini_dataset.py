@@ -8,12 +8,16 @@ from speechsep.dataset import get_storage_dir
 if __name__ == "__main__":
     dataset_mini_size = 100
     dataset_mini_path = "data/datasets/mini"
+    dataset_sample_rate = 8e3
+    dataset_min_length = 8
 
     dataset_full = "dev"
     dataset_full_path = f"{get_storage_dir()}/Libri2Mix/wav8k/min/"
 
     # Load metadata for full dataset and sample examples for mini dataset
     metadata = pd.read_csv(dataset_full_path + f"metadata/mixture_{dataset_full}_mix_both.csv")
+    # Ensure that all examples in mini dataset are sufficiently long
+    metadata = metadata[metadata["length"] >= dataset_min_length * dataset_sample_rate]
     metadata_mini = (
         metadata.sample(dataset_mini_size, random_state=42)
         .reset_index(drop=True)
