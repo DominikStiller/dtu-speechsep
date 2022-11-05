@@ -6,7 +6,7 @@ from tqdm import tqdm
 from speechsep.dataset import get_storage_dir
 
 if __name__ == "__main__":
-    dataset_mini_size = 100
+    dataset_mini_size = 128  # 2 batches
     dataset_mini_path = "data/datasets/mini"
     dataset_sample_rate = 8e3
     dataset_min_length = 8
