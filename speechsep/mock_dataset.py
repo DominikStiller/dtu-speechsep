@@ -4,6 +4,7 @@ from numpy.random import default_rng
 from torch.utils.data import Dataset
 
 from speechsep.model import valid_n_samples
+from speechsep.util import pad
 
 
 class SinusoidDataset(Dataset):
@@ -48,13 +49,12 @@ class SinusoidDataset(Dataset):
         self.pad_to_valid = pad_to_valid
         self.extend_to_valid = extend_to_valid
 
-        self.n_samples = example_length * sample_rate
+        self.n_samples = example_length * int(sample_rate)
         if pad_to_valid or extend_to_valid:
             self.n_samples_valid = valid_n_samples(self.n_samples)
         else:
             self.n_samples_valid = self.n_samples
 
-        self.sample_rate = sample_rate
         self.ts = np.arange(0, self.n_samples_valid / sample_rate, 1 / sample_rate)
         self._ts_unpadded = np.arange(0, self.n_samples / sample_rate, 1 / sample_rate)
 
@@ -66,7 +66,7 @@ class SinusoidDataset(Dataset):
         self.phis = default_rng(seed + 2).random((n, 2)) * 2 * np.pi
 
         # Ensure that sinusoids are below Nyquist frequency
-        assert self.omegas.max().max() / (2 * np.pi) < self.sample_rate / 2
+        assert self.omegas.max().max() / (2 * np.pi) < sample_rate / 2
 
     def __len__(self):
         return self.n
@@ -79,15 +79,8 @@ class SinusoidDataset(Dataset):
 
     def __getitem__(self, idx):
         if self.pad_to_valid:
-            speaker1 = self._generate_sinusoid(idx, 0, self._ts_unpadded)
-            speaker2 = self._generate_sinusoid(idx, 1, self._ts_unpadded)
-
-            delta = int(self.n_samples_valid - self.n_samples)
-            padding_left = max(0, delta) // 2
-            padding_right = delta - padding_left
-
-            speaker1 = np.pad(speaker1, (padding_left, padding_right))
-            speaker2 = np.pad(speaker2, (padding_left, padding_right))
+            speaker1 = pad(self._generate_sinusoid(idx, 0, self._ts_unpadded), self.n_samples_valid)
+            speaker2 = pad(self._generate_sinusoid(idx, 1, self._ts_unpadded), self.n_samples_valid)
             assert speaker1.shape[-1] == self.n_samples_valid
             assert speaker2.shape[-1] == self.n_samples_valid
         else:
@@ -106,13 +99,13 @@ class SinusoidDataset(Dataset):
 
 
 if __name__ == "__main__":
-    dataset = SinusoidDataset(10, example_length=1, extend_to_valid=True)
+    import matplotlib.pyplot as plt
+
+    dataset = SinusoidDataset(10, example_length=1, pad_to_valid=True)
 
     x, y = dataset[0]
     print(x.shape)
     print(y.shape)
-
-    import matplotlib.pyplot as plt
 
     plt.plot(dataset.ts, x[0])
     plt.plot(dataset.ts, y[0])

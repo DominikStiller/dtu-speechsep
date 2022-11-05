@@ -3,6 +3,7 @@ import torch
 import torch.nn.functional as F
 from torch import optim
 
+from speechsep.dataset import LibrimixDataset
 from speechsep.model import Demucs
 from speechsep.plotting import plot_separated_with_truth
 from speechsep.util import center_trim
@@ -42,12 +43,16 @@ if __name__ == "__main__":
     from pytorch_lightning.callbacks import ModelCheckpoint
     import os
 
-    train = False
+    train = True
     use_gpu = False
 
-    # train_checkpoint_path = None
-    train_checkpoint_path = "data/lightning_logs/version_18/checkpoints/epoch=99-step=25600.ckpt"
-    test_checkpoint_path = "data/lightning_logs/version_17/checkpoints/epoch=49-step=3200.ckpt"
+    train_checkpoint_path = None
+    # train_checkpoint_path = "data/lightning_logs/version_18/checkpoints/epoch=99-step=25600.ckpt"
+    # train_dataset = SinusoidDataset(4096 * 8, example_length=1, extend_to_valid=True)
+    train_dataset = LibrimixDataset("data/datasets/mini/mixture_mini_mix_both.csv", pad_to_valid=True)
+
+    test_checkpoint_path = "data/lightning_logs/version_19/checkpoints/epoch=119-step=30720.ckpt"
+    test_dataset = SinusoidDataset(50, example_length=1, extend_to_valid=True, seed=45)
 
     # Decide whether execution is on HPC node and if GPU should be used
     is_hpc = "LSF_ENVDIR" in os.environ
@@ -63,7 +68,7 @@ if __name__ == "__main__":
     if is_hpc and use_gpu:
         dataloader_args = {"batch_size": 64, "num_workers": 4, "persistent_workers": True}
         trainer_args = {
-            "max_epochs": 150,
+            "max_epochs": 360,
             "log_every_n_steps": 10,
             "accelerator": "gpu",
             "devices": 2,
@@ -77,14 +82,12 @@ if __name__ == "__main__":
             "accelerator": "gpu",
         }
     else:
-        dataloader_args = {"batch_size": 1}
+        dataloader_args = {"batch_size": 64}
         trainer_args = {"max_epochs": 100, "log_every_n_steps": 5}
 
     if train:
-        train_dataloader = DataLoader(
-            SinusoidDataset(4096 * 8, example_length=1, extend_to_valid=True), **dataloader_args
-        )
-        checkpoint_callback = ModelCheckpoint(every_n_epochs=5)
+        train_dataloader = DataLoader(train_dataset, **dataloader_args)
+        checkpoint_callback = ModelCheckpoint(every_n_epochs=120)
 
         trainer = pl.Trainer(
             default_root_dir="data/", callbacks=[checkpoint_callback], **trainer_args
@@ -95,11 +98,11 @@ if __name__ == "__main__":
     else:
         model = LitDemucs.load_from_checkpoint(test_checkpoint_path)
 
-        dataloader = DataLoader(SinusoidDataset(5, example_length=1, extend_to_valid=True, seed=45))
+        dataloader = DataLoader(test_dataset)
         ts = dataloader.dataset.ts
         dataloader = iter(dataloader)
 
-        for _ in range(5):
+        for _ in range(24):
             x, y = next(dataloader)
         y_pred = model.forward(x)
 

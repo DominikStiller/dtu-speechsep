@@ -71,6 +71,7 @@ if __name__ == "__main__":
     x, y = dataset[0]
     print(x.shape)
     print(y.shape)
+    print(len(dataset))
     print(dataset.sample_rate)
 
     plt.plot(dataset.ts, x[0])
