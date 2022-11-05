@@ -43,16 +43,24 @@ if __name__ == "__main__":
     from pytorch_lightning.callbacks import ModelCheckpoint
     import os
 
-    train = True
+    train = False
     use_gpu = False
 
     train_checkpoint_path = None
     # train_checkpoint_path = "data/lightning_logs/version_18/checkpoints/epoch=99-step=25600.ckpt"
     # train_dataset = SinusoidDataset(4096 * 8, example_length=1, extend_to_valid=True)
-    train_dataset = LibrimixDataset("data/datasets/mini/mixture_mini_mix_both.csv", pad_to_valid=True)
+    train_dataset = LibrimixDataset(
+        "data/datasets/mini/mixture_mini_mix_both.csv", pad_to_valid=True
+    )
 
-    test_checkpoint_path = "data/lightning_logs/version_19/checkpoints/epoch=119-step=30720.ckpt"
-    test_dataset = SinusoidDataset(50, example_length=1, extend_to_valid=True, seed=45)
+    # test_checkpoint_path = "data/lightning_logs/version_19/checkpoints/epoch=119-step=30720.ckpt"  # Sinusoid
+    test_checkpoint_path = (
+        "data/lightning_logs/version_13/checkpoints/epoch=359-step=360.ckpt"  # LibriMix mini
+    )
+    # test_dataset = SinusoidDataset(50, example_length=1, extend_to_valid=True, seed=45)
+    test_dataset = LibrimixDataset(
+        "data/datasets/mini/mixture_mini_mix_both.csv", pad_to_valid=True
+    )
 
     # Decide whether execution is on HPC node and if GPU should be used
     is_hpc = "LSF_ENVDIR" in os.environ
