@@ -1,8 +1,10 @@
+from pathlib import Path
 from typing import Union
 
 import numpy as np
 import torch
 import torch.nn.functional as F
+import torchaudio
 
 
 def center_trim(to_trim: torch.Tensor, target: torch.Tensor, dim=-1):
@@ -29,3 +31,11 @@ def pad(to_pad: Union[np.ndarray, torch.Tensor], target_length: int):
         return np.pad(to_pad, (padding_left, padding_right))
     elif isinstance(to_pad, torch.Tensor):
         return F.pad(to_pad, (padding_left, padding_right))
+
+
+def save_as_audio(x, out_path: str):
+    assert len(x.shape) == 2
+    p = Path(out_path)
+    p.parent.mkdir(exist_ok=True)
+    for i in range(x.shape[0]):
+        torchaudio.save(p.with_stem(f"{p.stem}_{i}"), x[i].unsqueeze(dim=0), sample_rate=int(8e3))

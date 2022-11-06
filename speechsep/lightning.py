@@ -6,7 +6,7 @@ from torch import optim
 from speechsep.dataset import LibrimixDataset
 from speechsep.model import Demucs
 from speechsep.plotting import plot_separated_with_truth
-from speechsep.util import center_trim
+from speechsep.util import center_trim, save_as_audio
 
 
 class LitDemucs(pl.LightningModule):
@@ -38,7 +38,6 @@ class LitDemucs(pl.LightningModule):
 
 
 if __name__ == "__main__":
-    from speechsep.mock_dataset import SinusoidDataset
     from torch.utils.data import DataLoader
     from pytorch_lightning.callbacks import ModelCheckpoint
     import os
@@ -46,17 +45,18 @@ if __name__ == "__main__":
     train = False
     use_gpu = False
 
-    train_checkpoint_path = None
-    # train_checkpoint_path = "data/lightning_logs/version_18/checkpoints/epoch=99-step=25600.ckpt"
+    # train_checkpoint_path = None
+    train_checkpoint_path = "data/lightning_logs/version_16/checkpoints/epoch=999-step=1500.ckpt"
     # train_dataset = SinusoidDataset(4096 * 8, example_length=1, extend_to_valid=True)
     train_dataset = LibrimixDataset(
         "data/datasets/mini/mixture_mini_mix_both.csv", pad_to_valid=True
     )
 
     # test_checkpoint_path = "data/lightning_logs/version_19/checkpoints/epoch=119-step=30720.ckpt"  # Sinusoid
-    test_checkpoint_path = (
-        "data/lightning_logs/version_13/checkpoints/epoch=359-step=360.ckpt"  # LibriMix mini
-    )
+    # test_checkpoint_path = (
+    #     "data/lightning_logs/version_15/checkpoints/epoch=499-step=1000.ckpt"  # LibriMix mini, 500 epochs
+    # )
+    test_checkpoint_path = "data/lightning_logs/version_17/checkpoints/epoch=2499-step=3000.ckpt"  # LibriMix mini, 2500 epochs
     # test_dataset = SinusoidDataset(50, example_length=1, extend_to_valid=True, seed=45)
     test_dataset = LibrimixDataset(
         "data/datasets/mini/mixture_mini_mix_both.csv", pad_to_valid=True
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     if is_hpc and use_gpu:
         dataloader_args = {"batch_size": 64, "num_workers": 4, "persistent_workers": True}
         trainer_args = {
-            "max_epochs": 360,
+            "max_epochs": 2500,
             "log_every_n_steps": 10,
             "accelerator": "gpu",
             "devices": 2,
@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     if train:
         train_dataloader = DataLoader(train_dataset, **dataloader_args)
-        checkpoint_callback = ModelCheckpoint(every_n_epochs=120)
+        checkpoint_callback = ModelCheckpoint(every_n_epochs=250)
 
         trainer = pl.Trainer(
             default_root_dir="data/", callbacks=[checkpoint_callback], **trainer_args
@@ -114,9 +114,22 @@ if __name__ == "__main__":
             x, y = next(dataloader)
         y_pred = model.forward(x)
 
+        x = center_trim(x, target=y_pred).detach()
+        y = center_trim(y, target=y_pred).detach()
+        y_pred = y_pred.detach()
+
+        # Remove batch dimension
+        x = x.squeeze(dim=0)
+        y = y.squeeze(dim=0)
+        y_pred = y_pred.squeeze(dim=0)
+
         plot_separated_with_truth(
-            center_trim(x, target=y_pred).detach(),
-            center_trim(y, target=y_pred).detach(),
-            y_pred.detach(),
+            x,
+            y,
+            y_pred,
             center_trim(torch.from_numpy(ts), target=y_pred),
         )
+
+        save_as_audio(x, "data/predict/x.wav")
+        save_as_audio(y, "data/predict/y.wav")
+        save_as_audio(y_pred, "data/predict/y_pred.wav")
