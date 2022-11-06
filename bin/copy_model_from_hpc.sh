@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-scp -r dtu-hpc:~/dev/dtu-speechsep/data/lightning_logs/version_$1 data/lightning_logs/
+rsync -e 'ssh -q' \
+  -av \
+  dtu-hpc:~/dev/dtu-speechsep/data/lightning_logs/version_$1 data/lightning_logs/

@@ -1,3 +1,6 @@
 #!/usr/bin/env bash
 
-scp -r speechsep/ dtu-hpc:~/dev/dtu-speechsep
+rsync -e 'ssh -q' \
+  -av \
+  --exclude __pycache__ --exclude *.pyc \
+  speechsep dtu-hpc:~/dev/dtu-speechsep
