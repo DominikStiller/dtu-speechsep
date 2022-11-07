@@ -133,3 +133,4 @@ Werkzeug==2.2.2
 yarl==1.8.1
 zipp==3.10.0
 pesq==0.0.4
+pystoi==0.3.3
