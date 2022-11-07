@@ -50,21 +50,21 @@ def plot_separated_with_truth(
     assert len(y.shape) == 2 and y.shape[0] == 2
     assert len(y_pred.shape) == 2 and y_pred.shape[0] == 2
 
-    fig, axs = plt.subplots(3, 1, figsize=(6, 8), tight_layout=True)
+    fig, axs = plt.subplots(3, 1, figsize=(8, 10), tight_layout=True, dpi=300)
 
     ax = axs[0]
-    ax.plot(ts, x[0])
+    ax.fill_between(ts, x[0], color="black")
     ax.set_title("Mixed")
 
     ax = axs[1]
-    ax.plot(ts, y_pred[0], label="Prediction")
-    ax.plot(ts, y[0], label="Ground truth")
+    ax.fill_between(ts, y[0], label="Ground truth", color="black")
+    ax.fill_between(ts, y_pred[0], label="Prediction", alpha=0.6, color="C1")
     ax.set_title("Speaker 1")
     ax.legend()
 
     ax = axs[2]
-    ax.plot(ts, y_pred[1], label="Prediction")
-    ax.plot(ts, y[1], label="Ground truth")
+    ax.fill_between(ts, y[1], label="Ground truth", color="black")
+    ax.fill_between(ts, y_pred[1], label="Prediction", alpha=0.6, color="C1")
     ax.set_title("Speaker 2")
     ax.legend()
 
