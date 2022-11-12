@@ -3,6 +3,7 @@ import torch
 from numpy.random import default_rng
 from torch.utils.data import Dataset
 
+from speechsep.cli import Args
 from speechsep.model import valid_n_samples
 from speechsep.util import pad
 
@@ -67,6 +68,20 @@ class SinusoidDataset(Dataset):
 
         # Ensure that sinusoids are below Nyquist frequency
         assert self.omegas.max().max() / (2 * np.pi) < sample_rate / 2
+
+    @classmethod
+    def from_args(cls, args: Args):
+        assert (
+            args.dataset_args["dataset"] == "sinusoid"
+        ), "Cannot create SinusoidDataset from given arguments"
+        return cls(
+            args.dataset_args["sinusoid_n_examples"],
+            args.dataset_args["example_length"],
+            args.dataset_args["sinusoid_sample_rate"],
+            args.dataset_args["pad_to_valid"],
+            args.dataset_args["extend_to_valid"],
+            args.dataset_args["sinusoid_seed"],
+        )
 
     def __len__(self):
         return self.n
