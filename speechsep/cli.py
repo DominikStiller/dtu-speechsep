@@ -33,7 +33,9 @@ class Args:
         }
         dataloader_args = {
             "batch_size": args["batch_size"] if args["mode"] == "train" else 1,
-            "num_workers": args["num_dataloader_workers"],
+            "num_workers": args["num_dataloader_workers"]
+            if args["num_dataloader_workers"] is not None
+            else args["devices"],
         }
 
         if args["mode"] == "train":
@@ -46,12 +48,26 @@ class Args:
         else:
             trainer_args = None
 
+        if "LSB_JOBID" in os.environ:
+            args["lsf_job"] = os.getenv("LSB_JOBID")
+
         return Args(model_args, dataset_args, dataloader_args, trainer_args, args)
 
     def save_to_json(self, folder: str):
         os.makedirs(folder, exist_ok=True)
         with open(os.path.join(folder, "args.json"), "w") as f:
-            json.dump(self.all, f, indent=3, sort_keys=True)
+            json.dump(
+                {
+                    "model_args": self.model_args,
+                    "dataset_args": self.dataset_args,
+                    "dataloader_args": self.dataloader_args,
+                    "trainer_args": self.trainer_args,
+                    "all": self.all,
+                },
+                f,
+                indent=3,
+                sort_keys=True,
+            )
 
     def __getitem__(self, item):
         return self.all[item]
@@ -86,7 +102,7 @@ def parse_cli_args() -> Args:
     parser_params.add_argument("--sinusoid-sample-rate", type=int, default=int(8e3))
     parser_params.add_argument("--sinusoid-seed", type=int, default=42)
     parser_params.add_argument("--checkpoint-path", type=str)
-    parser_params.add_argument("--num-dataloader-workers", type=int, default=4)
+    parser_params.add_argument("--num-dataloader-workers", type=int)
     parser_params.add_argument("--gpu", action="store_true")
     parser_params.add_argument("--devices", type=int, default=1)
 
