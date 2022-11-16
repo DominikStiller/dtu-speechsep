@@ -21,8 +21,12 @@ class LibrimixDataset(Dataset):
         else:
             raise "Empty dataset for LibriMix"
 
-        if self.metadata["length"].min() / self.sample_rate < example_length:
-            raise "Shortest length below given example_length"
+        # Remove examples that are shorter than given example length
+        self.metadata = self.metadata[self.metadata["length"] / self.sample_rate >= example_length]
+        if len(self) > 0:
+            print(f"Loaded LibriMix dataset with {len(self)} examples over {example_length} s long")
+        else:
+            raise f"No examples longer than {example_length} s in LibriMix dataset"
 
         self.n_samples = example_length * self.sample_rate
         if pad_to_valid:
