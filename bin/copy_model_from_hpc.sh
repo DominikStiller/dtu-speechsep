@@ -2,4 +2,4 @@
 
 rsync -e 'ssh -q' \
   -av --progress -h \
-  dtu-hpc-transfer:~/dev/dtu-speechsep/data/lightning_logs/version_$1 data/lightning_logs/
+  dtu-hpc-transfer:~/dev/dtu-speechsep/data/models/$1/version_$2 data/models/$1

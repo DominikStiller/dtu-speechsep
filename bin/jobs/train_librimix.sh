@@ -1,9 +1,9 @@
 #!/bin/sh
 ### General options
 ### queue
-#BSUB -q "gpua40 gpua10"
+#BSUB -q gpuv100
 ### job name
-#BSUB -J train_speechsep_sinusoid
+#BSUB -J train_speechsep_librimix
 ### number of cores
 #BSUB -n 2
 ### all cores on same host
@@ -11,20 +11,20 @@
 ### 2 GPUs in exclusive mode
 #BSUB -gpu "num=2:mode=exclusive_process:mps=yes"
 ### walltime limit
-#BSUB -W 5:00
+#BSUB -W 24:00
 ### memory
-#BSUB -R "rusage[mem=10GB]"
-### notify upon completion
-#BSUB -N
+#BSUB -R "rusage[mem=30GB]"
+### notify upon start and completion
+#BSUB -B -N
 ### output and error file
-#BSUB -o data/lsf_logs/train_speechsep_sinusoid/%J.out
-#BSUB -e data/lsf_logs/train_speechsep_sinusoid/%J.err
+#BSUB -o data/lsf_logs/train_speechsep_librimix/%J.out
+#BSUB -e data/lsf_logs/train_speechsep_librimix/%J.err
 
-mkdir -p data/lsf_logs/train_speechsep_sinusoid
+mkdir -p data/lsf_logs/train_speechsep_librimix
 
 module load python3/3.9.14
 module load cuda/11.7.1
 
 nvidia-smi
 
-bin/private/train_sinusoid.sh
+bin/private/train_librimix.sh
