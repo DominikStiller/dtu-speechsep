@@ -2,14 +2,15 @@ import pytorch_lightning as pl
 import torch.nn.functional as F
 from torch import optim
 
+from speechsep.cli import Args
 from speechsep.model import Demucs
 from speechsep.util import center_trim
 
 
 class LitDemucs(pl.LightningModule):
-    def __init__(self):
+    def __init__(self, args: Args):
         super().__init__()
-        self.model = Demucs()
+        self.model = Demucs(args)
 
     def forward(self, x):
         return self.model(x)

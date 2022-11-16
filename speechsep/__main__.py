@@ -1,26 +1,35 @@
 import pytorch_lightning as pl
 import torch
 from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader
 
 from speechsep.cli import parse_cli_args, Args
 from speechsep.dataset import LibrimixDataset
 from speechsep.lightning import LitDemucs
 from speechsep.mock_dataset import SinusoidDataset
-from speechsep.plotting import plot_separated_with_truth
+from speechsep.plotting import plot_separated_with_truth, save_plot
 from speechsep.util import center_trim, save_as_audio
 
 
 def train(args):
     dataset = _create_dataset_from_args(args)
-    train_dataloader = DataLoader(dataset, **args.dataloader_args)
-    checkpoint_callback = ModelCheckpoint(every_n_epochs=args.all["checkpoint_every_n_epochs"])
+    train_dataloader = DataLoader(
+        dataset, **args.dataloader_args, persistent_workers=args["devices"] > 1
+    )
+    checkpoint_callback = ModelCheckpoint(every_n_epochs=args["checkpoint_every_n_epochs"])
+    logger = TensorBoardLogger("data/models", name=args.dataset)
 
     trainer = pl.Trainer(
-        default_root_dir="data/", callbacks=[checkpoint_callback], **args.trainer_args
+        logger=logger,
+        callbacks=[checkpoint_callback],
+        **args.trainer_args,
+        auto_select_gpus=True,
     )
     trainer.fit(
-        model=LitDemucs(), train_dataloaders=train_dataloader, ckpt_path=args.all["checkpoint_path"]
+        model=LitDemucs(args),
+        train_dataloaders=train_dataloader,
+        ckpt_path=args["checkpoint_path"],
     )
 
 
@@ -32,7 +41,7 @@ def predict(args):
     ts = dataloader.dataset.ts
     dataloader = iter(dataloader)
 
-    for _ in range(args.all["item"]):
+    for _ in range(args["item"]):
         x, y = next(dataloader)
     y_pred = model.forward(x)
 

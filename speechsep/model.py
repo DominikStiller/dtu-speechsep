@@ -2,11 +2,12 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
+from speechsep.cli import Args
 from speechsep.util import center_trim
 
 
 class Demucs(nn.Module):
-    def __init__(self):
+    def __init__(self, args: Args):
         super().__init__()
 
         self.encoders = nn.ModuleList(

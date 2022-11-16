@@ -8,7 +8,7 @@ import torch.cuda
 
 @dataclass
 class Args:
-    mode: str
+    model_args: dict[str, Any]
     dataset_args: dict[str, Any]
     dataloader_args: dict[str, Any]
     trainer_args: dict[str, Any]
@@ -16,6 +16,9 @@ class Args:
 
     @classmethod
     def from_dict(cls, args: dict[str, Any]) -> "Args":
+        model_args = {
+            "should_upsample": not args["skip_upsampling"],
+        }
         dataset_args = {
             "dataset": args["dataset"],
             "pad_to_valid": args["valid_length"] == "pad",
@@ -29,7 +32,6 @@ class Args:
         dataloader_args = {
             "batch_size": args["batch_size"] if args["mode"] == "train" else 1,
             "num_workers": args["num_dataloader_workers"],
-            "persistent_workers": args["devices"] > 1,
         }
 
         if args["mode"] == "train":
@@ -38,12 +40,22 @@ class Args:
                 "log_every_n_steps": args["log_every_n_steps"],
                 "accelerator": "gpu" if (args["gpu"] and torch.cuda.is_available()) else None,
                 "devices": args["devices"],
-                "auto_select_gpus": True,
             }
         else:
             trainer_args = None
 
-        return Args(args["mode"], dataset_args, dataloader_args, trainer_args, args)
+        return Args(model_args, dataset_args, dataloader_args, trainer_args, args)
+
+    def __getitem__(self, item):
+        return self.all[item]
+
+    @property
+    def mode(self):
+        return self["mode"]
+
+    @property
+    def dataset(self):
+        return self["dataset"]
 
 
 def parse_cli_args() -> Args:
@@ -59,10 +71,11 @@ def parse_cli_args() -> Args:
     parser_params = ArgumentParser(add_help=False)
 
     parser_params.add_argument("--dataset", choices=["librimix", "sinusoid"], required=True)
+    parser_params.add_argument("--skip-upsampling", action="store_true")
     parser_params.add_argument("--valid-length", choices=["pad", "extend", "none"], default="pad")
     parser_params.add_argument("--example-length", type=float, default=1)
     parser_params.add_argument("--librimix-metadata-path", type=str)
-    parser_params.add_argument("--sinusoid-n-examples", type=int, default=2**15)
+    parser_params.add_argument("--sinusoid-n-examples", type=int, default=2 ** 15)
     parser_params.add_argument("--sinusoid-sample-rate", type=int, default=int(8e3))
     parser_params.add_argument("--sinusoid-seed", type=int, default=42)
     parser_params.add_argument("--checkpoint-path", type=str)
