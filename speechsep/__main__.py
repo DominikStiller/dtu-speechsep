@@ -34,8 +34,10 @@ def train(args):
 
 
 def predict(args):
-    model = LitDemucs.load_from_checkpoint(args.all["checkpoint_path"])
+    print(f"Loading checkpoint {args['checkpoint_path']}...")
+    model = LitDemucs.load_from_checkpoint(args["checkpoint_path"], args=args)
 
+    print("Predicting...")
     dataset = _create_dataset_from_args(args)
     dataloader = DataLoader(dataset)
     ts = dataloader.dataset.ts
@@ -54,16 +56,19 @@ def predict(args):
     y = y.squeeze(dim=0)
     y_pred = y_pred.squeeze(dim=0)
 
-    plot_separated_with_truth(
+    fig = plot_separated_with_truth(
         x,
         y,
         y_pred,
         center_trim(torch.from_numpy(ts), target=y_pred),
     )
+    # plt.show()
 
-    save_as_audio(x, "data/predict/x.wav")
-    save_as_audio(y, "data/predict/y.wav")
-    save_as_audio(y_pred, "data/predict/y_pred.wav")
+    output_path = f"data/predict/{args.dataset_args['dataset']}"
+    save_plot("waveforms", output_path, fig, "png")
+    save_as_audio(x, f"{output_path}/x.wav")
+    save_as_audio(y, f"{output_path}/y.wav")
+    save_as_audio(y_pred, f"{output_path}/y_pred.wav")
 
 
 def _create_dataset_from_args(args: Args):
