@@ -1,9 +1,9 @@
 import os
+import sys
+
 import pandas as pd
 import shutil
 from tqdm import tqdm
-
-from speechsep.dataset import get_storage_dir
 
 if __name__ == "__main__":
     dataset_mini_size = 128  # 2 batches
@@ -12,7 +12,7 @@ if __name__ == "__main__":
     dataset_min_length = 8
 
     dataset_full = "dev"
-    dataset_full_path = f"{get_storage_dir()}/Libri2Mix/wav8k/min/"
+    dataset_full_path = f"{sys.argv[1]}/Libri2Mix/wav8k/min/"
 
     # Load metadata for full dataset and sample examples for mini dataset
     metadata = pd.read_csv(dataset_full_path + f"metadata/mixture_{dataset_full}_mix_both.csv")
