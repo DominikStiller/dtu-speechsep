@@ -27,6 +27,7 @@ class Args:
             "extend_to_valid": args["valid_length"] == "extend",
             "example_length": args["example_length"],
             "librimix_metadata_path": args["librimix_metadata_path"],
+            "librimix_limit": args["librimix_limit"],
             "sinusoid_n_examples": args["sinusoid_n_examples"],
             "sinusoid_sample_rate": args["sinusoid_sample_rate"],
             "sinusoid_seed": args["sinusoid_seed"],
@@ -98,6 +99,7 @@ def parse_cli_args() -> Args:
     parser_params.add_argument("--valid-length", choices=["pad", "extend", "none"], default="pad")
     parser_params.add_argument("--example-length", type=float, default=1)
     parser_params.add_argument("--librimix-metadata-path", type=str)
+    parser_params.add_argument("--librimix-limit", type=int)
     parser_params.add_argument("--sinusoid-n-examples", type=int, default=2 ** 15)
     parser_params.add_argument("--sinusoid-sample-rate", type=int, default=int(8e3))
     parser_params.add_argument("--sinusoid-seed", type=int, default=42)

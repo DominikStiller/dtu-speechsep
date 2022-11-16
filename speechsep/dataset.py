@@ -12,7 +12,7 @@ from speechsep.util import pad
 
 
 class LibrimixDataset(Dataset):
-    def __init__(self, metadata_file: str, example_length=8, pad_to_valid=False):
+    def __init__(self, metadata_file: str, example_length=8, pad_to_valid=False, limit=None):
         self.metadata = pd.read_csv(metadata_file)
         self.pad_to_valid = pad_to_valid
 
@@ -23,10 +23,13 @@ class LibrimixDataset(Dataset):
 
         # Remove examples that are shorter than given example length
         self.metadata = self.metadata[self.metadata["length"] / self.sample_rate >= example_length]
-        if len(self) > 0:
-            print(f"Loaded LibriMix dataset with {len(self)} examples over {example_length} s long")
-        else:
+        if len(self) == 0:
             raise f"No examples longer than {example_length} s in LibriMix dataset"
+
+        if limit is not None:
+            self.metadata = self.metadata.iloc[:limit]
+
+        print(f"Loaded LibriMix dataset ({len(self)} examples)")
 
         self.n_samples = example_length * self.sample_rate
         if pad_to_valid:
@@ -44,6 +47,7 @@ class LibrimixDataset(Dataset):
             args.dataset_args["librimix_metadata_path"],
             args.dataset_args["example_length"],
             args.dataset_args["pad_to_valid"],
+            args.dataset_args["librimix_limit"],
         )
 
     def __len__(self):
