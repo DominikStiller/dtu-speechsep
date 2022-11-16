@@ -1,3 +1,4 @@
+import julius
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -37,6 +38,11 @@ class Demucs(nn.Module):
             if isinstance(sub, (nn.Conv1d, nn.ConvTranspose1d)):
                 rescale_conv(sub)
 
+        self.should_upsample = args.model_args["should_upsample"]
+        if self.should_upsample:
+            self.upsample = julius.resample.ResampleFrac(1, 2)
+            self.downsample = julius.resample.ResampleFrac(2, 1)
+
     def forward(self, x):
         """
         Forward-pass of the Demucs model. Only n_channels = 1 is supported.
@@ -48,6 +54,9 @@ class Demucs(nn.Module):
             Separated signal for both speakers, shape (n_batch, 2, n_samples)
         """
         skip_activations: list[torch.Tensor] = []
+
+        if self.should_upsample:
+            x = self.upsample(x)
 
         for encoder in self.encoders:
             x = encoder(x)
@@ -62,6 +71,9 @@ class Demucs(nn.Module):
             # Demucs adds instead of concatenates the skip activations, contrary to U-net
             x = x + skip_activation
             x = decoder(x)
+
+        if self.should_upsample:
+            x = self.downsample(x)
 
         return x
 

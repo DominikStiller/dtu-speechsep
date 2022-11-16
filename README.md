@@ -10,7 +10,6 @@ Links:
 * Ensure Python 3.9 is installed
 * Create a virtual environment with Python 3.9 interpreter
 * Install requirements from `requirements.txt`
-* Set the environment variable `LIBRIMIX_STORAGE_DIR` to the storage directory you used for `./generate_librimix.sh`
 
 
 ## Development
