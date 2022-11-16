@@ -1,3 +1,5 @@
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sb
@@ -68,4 +70,22 @@ def plot_separated_with_truth(
     ax.set_title("Speaker 2")
     ax.legend()
 
-    plt.show()
+    return fig
+
+
+def save_plot(name: str, plots_folder="data/plots", fig=None, type="pdf"):
+    os.makedirs(
+        plots_folder,
+        exist_ok=True,
+    )
+
+    if fig is None:
+        fig = plt.gcf()
+    fig.savefig(
+        os.path.join(plots_folder, f"{name}.{type}"),
+        dpi=450,
+        bbox_inches="tight",
+        pad_inches=0.01,
+    )
+
+    plt.close()

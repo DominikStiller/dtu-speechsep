@@ -3,4 +3,5 @@
 rsync -e 'ssh -q' \
   -av \
   --exclude __pycache__ --exclude *.pyc \
-  speechsep bin dtu-hpc:~/dev/dtu-speechsep
+  speechsep bin requirements.txt pyproject.toml \
+  dtu-hpc-transfer:~/dev/dtu-speechsep

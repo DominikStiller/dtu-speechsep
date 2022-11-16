@@ -6,12 +6,13 @@ import torch
 import torchaudio
 from torch.utils.data import Dataset
 
+from speechsep.cli import Args
 from speechsep.model import valid_n_samples
 from speechsep.util import pad
 
 
 class LibrimixDataset(Dataset):
-    def __init__(self, metadata_file: str, example_length=8, pad_to_valid=False):
+    def __init__(self, metadata_file: str, example_length=8, pad_to_valid=False, limit=None):
         self.metadata = pd.read_csv(metadata_file)
         self.pad_to_valid = pad_to_valid
 
@@ -20,8 +21,15 @@ class LibrimixDataset(Dataset):
         else:
             raise "Empty dataset for LibriMix"
 
-        if self.metadata["length"].min() / self.sample_rate < example_length:
-            raise "Shortest length below given example_length"
+        # Remove examples that are shorter than given example length
+        self.metadata = self.metadata[self.metadata["length"] / self.sample_rate >= example_length]
+        if len(self) == 0:
+            raise f"No examples longer than {example_length} s in LibriMix dataset"
+
+        if limit is not None:
+            self.metadata = self.metadata.iloc[:limit]
+
+        print(f"Loaded LibriMix dataset ({len(self)} examples)")
 
         self.n_samples = example_length * self.sample_rate
         if pad_to_valid:
@@ -29,6 +37,18 @@ class LibrimixDataset(Dataset):
         else:
             self.n_samples_valid = self.n_samples
         self.ts = np.arange(0, self.n_samples_valid / self.sample_rate, 1 / self.sample_rate)
+
+    @classmethod
+    def from_args(cls, args: Args):
+        assert (
+            args.dataset_args["dataset"] == "librimix"
+        ), "Cannot create LibrimixDataset from given arguments"
+        return cls(
+            args.dataset_args["librimix_metadata_path"],
+            args.dataset_args["example_length"],
+            args.dataset_args["pad_to_valid"],
+            args.dataset_args["librimix_limit"],
+        )
 
     def __len__(self):
         return len(self.metadata.index)
