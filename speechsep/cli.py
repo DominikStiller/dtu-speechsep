@@ -1,4 +1,6 @@
 """Parsing of command-line arguments"""
+import json
+import os.path
 from argparse import ArgumentParser, SUPPRESS
 from dataclasses import dataclass
 from typing import Any
@@ -45,6 +47,11 @@ class Args:
             trainer_args = None
 
         return Args(model_args, dataset_args, dataloader_args, trainer_args, args)
+
+    def save_to_json(self, folder: str):
+        os.makedirs(folder, exist_ok=True)
+        with open(os.path.join(folder, "args.json"), "w") as f:
+            json.dump(self.all, f, indent=3, sort_keys=True)
 
     def __getitem__(self, item):
         return self.all[item]

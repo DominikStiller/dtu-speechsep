@@ -19,6 +19,7 @@ def train(args):
     )
     checkpoint_callback = ModelCheckpoint(every_n_epochs=args["checkpoint_every_n_epochs"])
     logger = TensorBoardLogger("data/models", name=args.dataset)
+    args.save_to_json(logger.log_dir)
 
     trainer = pl.Trainer(
         logger=logger,
