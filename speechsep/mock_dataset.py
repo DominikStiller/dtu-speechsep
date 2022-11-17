@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import torch
 from numpy.random import default_rng
@@ -70,17 +72,31 @@ class SinusoidDataset(Dataset):
         assert self.omegas.max().max() / (2 * np.pi) < sample_rate / 2
 
     @classmethod
-    def from_args(cls, args: Args):
+    def from_args(cls, args: Args, split: str):
         assert (
             args.dataset_args["dataset"] == "sinusoid"
         ), "Cannot create SinusoidDataset from given arguments"
+
+        seed = args.dataset_args["sinusoid_seed"]
+        n_examples = args.dataset_args["sinusoid_n_examples"]
+        if split == "train":
+            seed += 0
+        elif split == "val":
+            seed += 1
+            n_examples = math.ceil(n_examples / 8)
+        elif split == "test":
+            seed += 2
+            n_examples = math.ceil(n_examples / 8)
+        else:
+            raise ValueError(f"Invalid split {split}")
+
         return cls(
-            args.dataset_args["sinusoid_n_examples"],
+            n_examples,
             args.dataset_args["example_length"],
             args.dataset_args["sinusoid_sample_rate"],
             args.dataset_args["pad_to_valid"],
             args.dataset_args["extend_to_valid"],
-            args.dataset_args["sinusoid_seed"],
+            seed,
         )
 
     def __len__(self):

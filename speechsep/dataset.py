@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import pandas as pd
 import torch
@@ -29,8 +27,6 @@ class LibrimixDataset(Dataset):
         if limit is not None:
             self.metadata = self.metadata.iloc[:limit]
 
-        print(f"Loaded LibriMix dataset ({len(self)} examples)")
-
         self.n_samples = example_length * self.sample_rate
         if pad_to_valid:
             self.n_samples_valid = valid_n_samples(self.n_samples)
@@ -39,16 +35,29 @@ class LibrimixDataset(Dataset):
         self.ts = np.arange(0, self.n_samples_valid / self.sample_rate, 1 / self.sample_rate)
 
     @classmethod
-    def from_args(cls, args: Args):
+    def from_args(cls, args: Args, split: str):
         assert (
             args.dataset_args["dataset"] == "librimix"
         ), "Cannot create LibrimixDataset from given arguments"
-        return cls(
-            args.dataset_args["librimix_metadata_path"],
+
+        if split == "train":
+            metadata_file = args.dataset_args["librimix_train_metadata"]
+        elif split == "val":
+            metadata_file = args.dataset_args["librimix_val_metadata"]
+        elif split == "test":
+            metadata_file = args.dataset_args["librimix_test_metadata"]
+        else:
+            raise ValueError(f"Invalid split {split}")
+
+        dataset = cls(
+            metadata_file,
             args.dataset_args["example_length"],
             args.dataset_args["pad_to_valid"],
             args.dataset_args["librimix_limit"],
         )
+        print(f"Loaded LibriMix dataset ({len(dataset)} examples, {split})")
+
+        return dataset
 
     def __len__(self):
         return len(self.metadata.index)

@@ -18,6 +18,10 @@ class Args:
 
     @classmethod
     def from_dict(cls, args: dict[str, Any]) -> "Args":
+        if args["num_workers"] is None:
+            # Use one dataloader worker per GPU
+            args["num_workers"] = args["devices"]
+
         model_args = {
             "should_upsample": not args["skip_upsampling"],
         }
@@ -26,7 +30,9 @@ class Args:
             "pad_to_valid": args["valid_length"] == "pad",
             "extend_to_valid": args["valid_length"] == "extend",
             "example_length": args["example_length"],
-            "librimix_metadata_path": args["librimix_metadata_path"],
+            "librimix_train_metadata": args["librimix_train_metadata"],
+            "librimix_val_metadata": args["librimix_val_metadata"],
+            "librimix_test_metadata": args["librimix_test_metadata"],
             "librimix_limit": args["librimix_limit"],
             "sinusoid_n_examples": args["sinusoid_n_examples"],
             "sinusoid_sample_rate": args["sinusoid_sample_rate"],
@@ -34,9 +40,7 @@ class Args:
         }
         dataloader_args = {
             "batch_size": args["batch_size"] if args["mode"] == "train" else 1,
-            "num_workers": args["num_dataloader_workers"]
-            if args["num_dataloader_workers"] is not None
-            else args["devices"],
+            "num_workers": args["num_workers"],
         }
 
         if args["mode"] == "train":
@@ -45,6 +49,8 @@ class Args:
                 "log_every_n_steps": args["log_every_n_steps"],
                 "accelerator": "gpu" if (args["gpu"] and torch.cuda.is_available()) else None,
                 "devices": args["devices"],
+                "limit_val_batches": args["limit_val_batches"],
+                "val_check_interval": args["val_check_interval"],
             }
         else:
             trainer_args = None
@@ -98,13 +104,15 @@ def parse_cli_args() -> Args:
     parser_params.add_argument("--skip-upsampling", action="store_true")
     parser_params.add_argument("--valid-length", choices=["pad", "extend", "none"], default="pad")
     parser_params.add_argument("--example-length", type=float, default=1)
-    parser_params.add_argument("--librimix-metadata-path", type=str)
+    parser_params.add_argument("--librimix-train-metadata", type=str)
+    parser_params.add_argument("--librimix-val-metadata", type=str)
+    parser_params.add_argument("--librimix-test-metadata", type=str)
     parser_params.add_argument("--librimix-limit", type=int)
-    parser_params.add_argument("--sinusoid-n-examples", type=int, default=2 ** 15)
+    parser_params.add_argument("--sinusoid-n-examples", type=int, default=2**15)
     parser_params.add_argument("--sinusoid-sample-rate", type=int, default=int(8e3))
     parser_params.add_argument("--sinusoid-seed", type=int, default=42)
     parser_params.add_argument("--checkpoint-path", type=str)
-    parser_params.add_argument("--num-dataloader-workers", type=int)
+    parser_params.add_argument("--num-workers", type=int)
     parser_params.add_argument("--gpu", action="store_true")
     parser_params.add_argument("--devices", type=int, default=1)
 
@@ -116,6 +124,8 @@ def parse_cli_args() -> Args:
     parser_training.add_argument("--max-epochs", type=int, default=500)
     parser_training.add_argument("--log-every-n-steps", type=int, default=10)
     parser_training.add_argument("--checkpoint-every-n-epochs", type=int, default=5)
+    parser_training.add_argument("--limit-val-batches", type=int, default=1)
+    parser_training.add_argument("--val-check-interval", type=float, default=1.0)
 
     # Prediction mode
     parser_prediction = subparsers.add_parser("predict", parents=[parser_params])

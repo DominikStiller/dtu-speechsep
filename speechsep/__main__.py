@@ -13,10 +13,14 @@ from speechsep.util import center_trim, save_as_audio
 
 
 def train(args):
-    dataset = _create_dataset_from_args(args)
+    train_dataset, val_dataset = _create_train_datasets_from_args(args)
     train_dataloader = DataLoader(
-        dataset, **args.dataloader_args, persistent_workers=args["devices"] > 1
+        train_dataset, **args.dataloader_args, persistent_workers=args["devices"] > 1
     )
+    val_dataloader = DataLoader(
+        val_dataset, **args.dataloader_args, persistent_workers=args["devices"] > 1
+    )
+
     checkpoint_callback = ModelCheckpoint(every_n_epochs=args["checkpoint_every_n_epochs"])
     logger = TensorBoardLogger("data/models", name=args.dataset)
     args.save_to_json(logger.log_dir)
@@ -30,6 +34,7 @@ def train(args):
     trainer.fit(
         model=LitDemucs(args),
         train_dataloaders=train_dataloader,
+        val_dataloaders=val_dataloader,
         ckpt_path=args["checkpoint_path"],
     )
 
@@ -39,8 +44,8 @@ def predict(args):
     model = LitDemucs.load_from_checkpoint(args["checkpoint_path"], args=args)
 
     print("Predicting...")
-    dataset = _create_dataset_from_args(args)
-    dataloader = DataLoader(dataset)
+    test_dataset = _create_test_dataset_from_args(args)
+    dataloader = DataLoader(test_dataset)
     ts = dataloader.dataset.ts
     dataloader = iter(dataloader)
 
@@ -72,11 +77,20 @@ def predict(args):
     save_as_audio(y_pred, f"{output_path}/y_pred.wav")
 
 
-def _create_dataset_from_args(args: Args):
+def _create_train_datasets_from_args(args: Args):
     if args.dataset_args["dataset"] == "sinusoid":
-        return SinusoidDataset.from_args(args)
+        dataset_cls = SinusoidDataset
     elif args.dataset_args["dataset"] == "librimix":
-        return LibrimixDataset.from_args(args)
+        dataset_cls = LibrimixDataset
+    return dataset_cls.from_args(args, "train"), dataset_cls.from_args(args, "val")
+
+
+def _create_test_dataset_from_args(args: Args):
+    if args.dataset_args["dataset"] == "sinusoid":
+        dataset_cls = SinusoidDataset
+    elif args.dataset_args["dataset"] == "librimix":
+        dataset_cls = LibrimixDataset
+    return dataset_cls.from_args(args, "test")
 
 
 if __name__ == "__main__":
