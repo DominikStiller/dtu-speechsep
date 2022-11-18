@@ -15,7 +15,7 @@ from speechsep.util import center_trim, save_as_audio
 def train(args):
     train_dataset, val_dataset = _create_train_datasets_from_args(args)
     train_dataloader = DataLoader(
-        train_dataset, **args.dataloader_args, persistent_workers=args["devices"] > 1
+        train_dataset, **args.dataloader_args, persistent_workers=args["devices"] > 1, shuffle=True
     )
     val_dataloader = DataLoader(
         val_dataset, **args.dataloader_args, persistent_workers=args["devices"] > 1

@@ -13,7 +13,7 @@
 ### walltime limit
 #BSUB -W 24:00
 ### memory
-#BSUB -R "rusage[mem=30GB]"
+#BSUB -R "rusage[mem=20GB]"
 ### notify upon start and completion
 #BSUB -B -N
 ### output and error file

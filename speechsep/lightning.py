@@ -60,5 +60,5 @@ class LitDemucs(pl.LightningModule):
         return loss, sisdr, pesq, stoi
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=3e-4)
+        optimizer = optim.Adam(self.parameters(), lr=1e-4)
         return optimizer
