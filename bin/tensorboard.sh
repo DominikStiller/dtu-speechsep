@@ -10,4 +10,4 @@ else
    PORT=45659  # random port to avoid conflict
 fi
 
-tensorboard --logdir data/models --port $PORT
+tensorboard --logdir data/models --port $PORT --reload_multifile True
