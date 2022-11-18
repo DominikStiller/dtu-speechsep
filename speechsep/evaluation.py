@@ -32,6 +32,7 @@ METRIC_NAMES = {
     "val_loss": "Validation loss",
     "val_pesq": "Validation PESQ",
     "val_stoi": "Validation STOI",
+    "val_sisdr": "Validation SI-SDR",
 }
 
 
