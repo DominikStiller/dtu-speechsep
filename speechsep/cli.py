@@ -104,7 +104,7 @@ def parse_cli_args() -> Args:
     parser_params.add_argument("--skip-upsampling", action="store_true")
     parser_params.add_argument("--valid-length", choices=["pad", "extend", "none"], default="pad")
     parser_params.add_argument("--example-length", type=float, default=1)
-    parser_params.add_argument("--librimix-train-metadata", type=str)
+    parser_params.add_argument("--librimix-train-metadata", action="extend", nargs="+", type=str)
     parser_params.add_argument("--librimix-val-metadata", type=str)
     parser_params.add_argument("--librimix-test-metadata", type=str)
     parser_params.add_argument("--librimix-limit", type=int)

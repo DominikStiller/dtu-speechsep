@@ -41,20 +41,26 @@ class LibrimixDataset(Dataset):
         ), "Cannot create LibrimixDataset from given arguments"
 
         if split == "train":
-            metadata_file = args.dataset_args["librimix_train_metadata"]
+            metadata_files = args.dataset_args["librimix_train_metadata"]
         elif split == "val":
-            metadata_file = args.dataset_args["librimix_val_metadata"]
+            metadata_files = [args.dataset_args["librimix_val_metadata"]]
         elif split == "test":
-            metadata_file = args.dataset_args["librimix_test_metadata"]
+            metadata_files = [args.dataset_args["librimix_test_metadata"]]
         else:
             raise ValueError(f"Invalid split {split}")
 
-        dataset = cls(
-            metadata_file,
-            args.dataset_args["example_length"],
-            args.dataset_args["pad_to_valid"],
-            args.dataset_args["librimix_limit"],
+        dataset = torch.utils.data.ConcatDataset(
+            [
+                cls(
+                    metadata_file,
+                    args.dataset_args["example_length"],
+                    args.dataset_args["pad_to_valid"],
+                    args.dataset_args["librimix_limit"],
+                )
+                for metadata_file in metadata_files
+            ]
         )
+
         print(f"Loaded LibriMix dataset ({len(dataset)} examples, {split})")
 
         return dataset
