@@ -1,5 +1,6 @@
 import os
 
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sb
@@ -12,7 +13,7 @@ sb.set(
     font_scale=1.6,
     font="sans-serif",
     rc={
-        "lines.linewidth": 1.2,
+        "lines.linewidth": 1.4,
         "axes.titleweight": "bold",
     },
 )
@@ -71,6 +72,21 @@ def plot_separated_with_truth(
     ax.legend()
 
     return fig
+
+
+def format_plot(
+    xlocator=matplotlib.ticker.AutoMinorLocator(),
+    ylocator=matplotlib.ticker.AutoMinorLocator(),
+):
+    fig = plt.gcf()
+    for ax in fig.axes:
+        ax.get_xaxis().set_minor_locator(xlocator)
+        ax.get_yaxis().set_minor_locator(ylocator)
+        ax.grid(b=True, which="major", linewidth=1.0)
+        ax.grid(b=True, which="minor", linewidth=0.5, linestyle="-.")
+
+    # fig.tight_layout(pad=0.1, h_pad=0.4, w_pad=0.4)]
+    fig.tight_layout()
 
 
 def save_plot(name: str, plots_folder="data/plots", fig=None, type="pdf"):
