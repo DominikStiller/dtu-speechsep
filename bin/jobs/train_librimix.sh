@@ -5,7 +5,7 @@
 ### job name
 #BSUB -J train_speechsep_librimix
 ### number of cores
-#BSUB -n 2
+#BSUB -n 4
 ### all cores on same host
 #BSUB -R "span[hosts=1]"
 ### 2 GPUs in exclusive mode

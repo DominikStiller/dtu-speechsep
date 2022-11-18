@@ -1,7 +1,6 @@
-import pytorch_lightning as pl
-import torch.nn.functional as F
-from pesq import NoUtterancesError
-from torch import optim
+from pytorch_lightning import LightningModule
+from torch.nn.functional import l1_loss
+from torch.optim import Adam
 from torchmetrics import ScaleInvariantSignalDistortionRatio
 from torchmetrics.audio.pesq import PerceptualEvaluationSpeechQuality
 from torchmetrics.audio.stoi import ShortTimeObjectiveIntelligibility
@@ -11,13 +10,15 @@ from speechsep.model import Demucs
 from speechsep.util import center_trim
 
 
-class LitDemucs(pl.LightningModule):
+class LitDemucs(LightningModule):
     def __init__(self, args: Args):
         super().__init__()
         self.model = Demucs(args)
 
         self.metric_sisdr = ScaleInvariantSignalDistortionRatio()
-        self.metric_pesq = PerceptualEvaluationSpeechQuality(8000, "nb")
+        self.metric_pesq = PerceptualEvaluationSpeechQuality(
+            8000, "nb", n_processes=args["num_workers"]
+        )
         self.metric_stoi = ShortTimeObjectiveIntelligibility(8000, False)
 
     def forward(self, x):
@@ -27,7 +28,7 @@ class LitDemucs(pl.LightningModule):
         x, y = batch
         y_pred = self(x)
         y = center_trim(y, target=y_pred)
-        loss = F.l1_loss(y_pred, y)
+        loss = l1_loss(y_pred, y)
         self.log("train_loss", loss)
         return loss
 
@@ -47,18 +48,19 @@ class LitDemucs(pl.LightningModule):
         x, y = batch
         y_pred = self(x)
         y = center_trim(y, target=y_pred)
-        loss = F.l1_loss(y_pred, y)
+        loss = l1_loss(y_pred, y)
 
         # Calculate average metrics over all channels and examples
         sisdr = self.metric_sisdr(y_pred, y)
         try:
             pesq = self.metric_pesq(y_pred, y)
-        except NoUtterancesError:
+        except Exception:
+            # Errors can occur when PESQ is not computable (NoUtterancesError) or when using multiprocessing
             pesq = 0.0
         stoi = self.metric_stoi(y_pred, y)
 
         return loss, sisdr, pesq, stoi
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=1e-4)
+        optimizer = Adam(self.parameters(), lr=1e-4)
         return optimizer

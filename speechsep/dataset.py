@@ -27,7 +27,7 @@ class LibrimixDataset(Dataset):
         if limit is not None:
             self.metadata = self.metadata.iloc[:limit]
 
-        self.n_samples = example_length * self.sample_rate
+        self.n_samples = int(example_length * self.sample_rate)
         if pad_to_valid:
             self.n_samples_valid = valid_n_samples(self.n_samples)
         else:

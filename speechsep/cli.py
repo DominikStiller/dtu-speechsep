@@ -19,8 +19,8 @@ class Args:
     @classmethod
     def from_dict(cls, args: dict[str, Any]) -> "Args":
         if args["num_workers"] is None:
-            # Use one dataloader worker per GPU
-            args["num_workers"] = args["devices"]
+            # Use two dataloader worker per GPU
+            args["num_workers"] = 2 * args["devices"]
 
         model_args = {
             "should_upsample": not args["skip_upsampling"],
