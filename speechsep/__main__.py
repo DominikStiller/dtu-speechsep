@@ -1,6 +1,6 @@
 import pytorch_lightning as pl
 import torch
-from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader
 from torchmetrics.functional import scale_invariant_signal_noise_ratio
@@ -16,24 +16,25 @@ from speechsep.util import center_trim, save_as_audio
 def train(args):
     train_dataset, val_dataset = _create_train_datasets_from_args(args)
     train_dataloader = DataLoader(
-        train_dataset, **args.dataloader_args, persistent_workers=args["devices"] > 1, shuffle=True
+        train_dataset, **args.dataloader_args, persistent_workers=args["devices"] > 1
     )
     val_dataloader = DataLoader(
         val_dataset, **args.dataloader_args, persistent_workers=args["devices"] > 1
     )
 
-    checkpoint_callback = ModelCheckpoint(every_n_epochs=args["checkpoint_every_n_epochs"])
+    checkpoint = ModelCheckpoint(every_n_epochs=args["checkpoint_every_n_epochs"])
+    lr_monitor = LearningRateMonitor()
     logger = TensorBoardLogger("data/models", name=args.dataset)
     args.save_to_json(logger.log_dir)
 
     trainer = pl.Trainer(
         logger=logger,
-        callbacks=[checkpoint_callback],
+        callbacks=[checkpoint, lr_monitor],
         **args.trainer_args,
         auto_select_gpus=True,
     )
     trainer.fit(
-        model=LitDemucs(args),
+        model=LitDemucs(args, trainer),
         train_dataloaders=train_dataloader,
         val_dataloaders=val_dataloader,
         ckpt_path=args["checkpoint_path"],

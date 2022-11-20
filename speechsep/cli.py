@@ -126,6 +126,8 @@ def parse_cli_args() -> Args:
     parser_training.add_argument("--checkpoint-every-n-epochs", type=int, default=5)
     parser_training.add_argument("--limit-val-batches", type=int, default=1)
     parser_training.add_argument("--val-check-interval", type=float, default=1.0)
+    parser_training.add_argument("--cosine-anneal-period", type=int)
+    parser_training.add_argument("--reduce-on-plateau-metric", type=str)
 
     # Prediction mode
     parser_prediction = subparsers.add_parser("predict", parents=[parser_params])

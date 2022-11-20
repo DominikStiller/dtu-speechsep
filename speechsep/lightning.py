@@ -1,6 +1,7 @@
 from pytorch_lightning import LightningModule
 from torch.nn.functional import l1_loss
 from torch.optim import Adam
+from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingLR
 from torchmetrics import ScaleInvariantSignalDistortionRatio
 from torchmetrics.audio.pesq import PerceptualEvaluationSpeechQuality
 from torchmetrics.audio.stoi import ShortTimeObjectiveIntelligibility
@@ -11,8 +12,11 @@ from speechsep.util import center_trim
 
 
 class LitDemucs(LightningModule):
-    def __init__(self, args: Args):
+    def __init__(self, args: Args, trainer=None):
         super().__init__()
+        self.args = args
+        self.trainer = trainer
+
         self.model = Demucs(args)
 
         self.metric_sisdr = ScaleInvariantSignalDistortionRatio()
@@ -62,5 +66,35 @@ class LitDemucs(LightningModule):
         return loss, sisdr, pesq, stoi
 
     def configure_optimizers(self):
-        optimizer = Adam(self.parameters(), lr=1e-4)
-        return optimizer
+        optimizer = Adam(self.parameters(), lr=3e-4)
+        optimizer_config = {
+            "optimizer": optimizer,
+        }
+
+        # Configure learning rate scheduler
+        if (
+            self.args["cosine_anneal_period"] is not None
+            and self.args["reduce_on_plateau_metric"] is not None
+        ):
+            raise ValueError(
+                "Only one of cosine_anneal_period and reduce_on_plateau_metric can be set."
+            )
+
+        if self.args["cosine_anneal_period"] is not None:
+            steps_per_epoch = self.trainer.estimated_stepping_batches // self.trainer.max_epochs
+            optimizer_config["lr_scheduler"] = CosineAnnealingLR(
+                optimizer, steps_per_epoch * self.args["cosine_anneal_period"]
+            )
+            print(
+                f"Using cosine annealing LR scheduler with period {self.args['cosine_anneal_period']} epochs."
+            )
+        elif self.args["reduce_on_plateau_metric"] is not None:
+            optimizer_config["lr_scheduler"] = {
+                "scheduler": ReduceLROnPlateau(optimizer),
+                "monitor": self.args["reduce_on_plateau_metric"],
+            }
+            print(
+                f"Using reduce on plateau LR scheduler with metric {self.args['reduce_on_plateau_metric']}."
+            )
+
+        return optimizer_config
