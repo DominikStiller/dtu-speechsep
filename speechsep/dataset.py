@@ -49,17 +49,19 @@ class LibrimixDataset(Dataset):
         else:
             raise ValueError(f"Invalid split {split}")
 
-        dataset = torch.utils.data.ConcatDataset(
-            [
-                cls(
-                    metadata_file,
-                    args.dataset_args["example_length"],
-                    args.dataset_args["pad_to_valid"],
-                    args.dataset_args["librimix_limit"],
-                )
-                for metadata_file in metadata_files
-            ]
-        )
+        datasets = [
+            cls(
+                metadata_file,
+                args.dataset_args["example_length"],
+                args.dataset_args["pad_to_valid"],
+                args.dataset_args["librimix_limit"],
+            )
+            for metadata_file in metadata_files
+        ]
+        if len(datasets) == 1:
+            dataset = datasets[0]
+        else:
+            dataset = torch.utils.data.ConcatDataset(datasets)
 
         print(f"Loaded LibriMix dataset ({len(dataset)} examples, {split})")
 
