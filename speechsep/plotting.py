@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sb
 import torch
+from torchmetrics.functional import scale_invariant_signal_noise_ratio
 
 # Initialize seaborn formatting once module is loaded
 sb.set(
@@ -60,15 +61,17 @@ def plot_separated_with_truth(
     ax.set_title("Mixed")
 
     ax = axs[1]
+    sisdr = scale_invariant_signal_noise_ratio(y_pred[0], y[0])
     ax.fill_between(ts, y[0], label="Ground truth", color="black")
     ax.fill_between(ts, y_pred[0], label="Prediction", alpha=0.6, color="C1")
-    ax.set_title("Speaker 1")
+    ax.set_title(f"Speaker 1 (SI-SDR: {sisdr:.2f} dB)")
     ax.legend()
 
     ax = axs[2]
+    sisdr = scale_invariant_signal_noise_ratio(y_pred[1], y[1])
     ax.fill_between(ts, y[1], label="Ground truth", color="black")
     ax.fill_between(ts, y_pred[1], label="Prediction", alpha=0.6, color="C1")
-    ax.set_title("Speaker 2")
+    ax.set_title(f"Speaker 2 (SI-SDR: {sisdr:.2f} dB)")
     ax.legend()
 
     return fig

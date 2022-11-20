@@ -3,6 +3,7 @@ import torch
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader
+from torchmetrics.functional import scale_invariant_signal_noise_ratio
 
 from speechsep.cli import parse_cli_args, Args
 from speechsep.dataset import LibrimixDataset
@@ -40,15 +41,16 @@ def train(args):
 
 
 def predict(args):
-    print(f"Loading checkpoint {args['checkpoint_path']}...")
+    print(f"Loading checkpoint {args['checkpoint_path']}")
     model = LitDemucs.load_from_checkpoint(args["checkpoint_path"], args=args)
 
-    print("Predicting...")
+    print(f"Loading dataset")
     test_dataset = _create_test_dataset_from_args(args)
     dataloader = DataLoader(test_dataset)
     ts = dataloader.dataset.ts
     dataloader = iter(dataloader)
 
+    print("Predicting")
     for _ in range(args["item"]):
         x, y = next(dataloader)
     y_pred = model.forward(x)
@@ -56,6 +58,13 @@ def predict(args):
     x = center_trim(x, target=y_pred).detach()
     y = center_trim(y, target=y_pred).detach()
     y_pred = y_pred.detach()
+
+    # Flip channels if necessary since network may change order
+    y_pred_flipped = y_pred.flip(dims=[1])
+    sisdr_original = scale_invariant_signal_noise_ratio(y_pred, y).mean()
+    sisdr_flipped = scale_invariant_signal_noise_ratio(y_pred_flipped, y).mean()
+    if sisdr_flipped > sisdr_original:
+        y_pred = y_pred_flipped
 
     # Remove batch dimension
     x = x.squeeze(dim=0)
