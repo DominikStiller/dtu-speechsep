@@ -12,10 +12,9 @@ from speechsep.util import center_trim
 
 
 class LitDemucs(LightningModule):
-    def __init__(self, args: Args, trainer=None):
+    def __init__(self, args: Args):
         super().__init__()
         self.args = args
-        self.trainer = trainer
 
         self.model = Demucs(args)
 

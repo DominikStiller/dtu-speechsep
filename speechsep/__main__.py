@@ -16,7 +16,7 @@ from speechsep.util import center_trim, save_as_audio
 def train(args):
     train_dataset, val_dataset = _create_train_datasets_from_args(args)
     train_dataloader = DataLoader(
-        train_dataset, **args.dataloader_args, persistent_workers=args["devices"] > 1
+        train_dataset, **args.dataloader_args, persistent_workers=args["devices"] > 1, shuffle=True
     )
     val_dataloader = DataLoader(
         val_dataset, **args.dataloader_args, persistent_workers=args["devices"] > 1
@@ -34,7 +34,7 @@ def train(args):
         auto_select_gpus=True,
     )
     trainer.fit(
-        model=LitDemucs(args, trainer),
+        model=LitDemucs(args),
         train_dataloaders=train_dataloader,
         val_dataloaders=val_dataloader,
         ckpt_path=args["checkpoint_path"],
