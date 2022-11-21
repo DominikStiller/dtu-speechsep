@@ -15,10 +15,10 @@
 #
 # Adjust the model one by one, train the models and compare test results.
 
-import os
 import sys
-from glob import glob
+from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MaxNLocator
@@ -36,20 +36,23 @@ METRIC_NAMES = {
 }
 
 
-def plot_training(log: pd.DataFrame, metrics: list[str], plot_folder: str):
+def plot_training(log: pd.DataFrame, metrics: list[str], params: dict):
     fig, (ax_loss, ax_metrics) = plt.subplots(2, 1, figsize=(12, 8), sharex="all")
 
     for metric in metrics:
+        if metric not in METRIC_NAMES.keys():
+            continue
+
         if "loss" in metric:
             ax = ax_loss
         else:
             ax = ax_metrics
 
-        rows = log.dropna(subset=metric)
+        rows = log.dropna(subset=metric)[["step", metric]]
         with pd.option_context("mode.chained_assignment", None):
             # Smooth with rolling window proportional to logging frequency
-            rolling_window = int(_get_metric_frequency(log, metric) * 200)
-            rows[metric] = rows[metric].rolling(rolling_window).mean()
+            rolling_window = max(1, int(np.log1p(_get_metric_frequency(log, metric)) * 200))
+            rows[metric] = rows[metric].rolling(rolling_window, center=True).mean()
 
         ax.plot(rows["step"], rows[metric], label=METRIC_NAMES[metric])
 
@@ -62,9 +65,11 @@ def plot_training(log: pd.DataFrame, metrics: list[str], plot_folder: str):
 
     ax_metrics.set_xticks(*_get_ticks(log))
 
+    plt.suptitle(f"Training on {params['dataset']} (Version {params['version']})")
+
     format_plot()
     plt.show()
-    save_plot("training", plot_folder, fig)
+    save_plot("training", params["plot_folder"], fig)
 
 
 def _get_metric_frequency(log: pd.DataFrame, metric: str) -> int:
@@ -91,8 +96,8 @@ def _get_ticks(log: pd.DataFrame) -> tuple[ArrayLike, ArrayLike]:
     return closest_steps["step"], closest_steps["epoch"]
 
 
-def load_log(folder: str):
-    file = glob(os.path.join(folder, "events.out.*"))[0]
+def load_log(folder: Path):
+    file = str(next(folder.glob("events.out.*")))
 
     log = []
 
@@ -124,7 +129,13 @@ def load_log(folder: str):
 
 
 if __name__ == "__main__":
-    model_folder = sys.argv[1]
-    plot_folder = os.path.join(model_folder, "plots")
+    model_folder = Path(sys.argv[1])
+
+    params = {
+        "plot_folder": model_folder / "Path",
+        "version": model_folder.parts[-1].replace("version_", ""),
+        "dataset": model_folder.parts[-2],
+    }
+
     log, metrics = load_log(model_folder)
-    plot_training(log, metrics, plot_folder)
+    plot_training(log, metrics, params)
