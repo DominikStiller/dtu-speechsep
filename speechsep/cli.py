@@ -1,7 +1,7 @@
 """Parsing of command-line arguments"""
 import json
 import os.path
-from argparse import ArgumentParser, SUPPRESS
+from argparse import ArgumentParser
 from dataclasses import dataclass
 from typing import Any
 
@@ -22,9 +22,7 @@ class Args:
             # Use two dataloader worker per GPU
             args["num_workers"] = 2 * args["devices"]
 
-        model_args = {
-            "should_upsample": not args["skip_upsampling"],
-        }
+        model_args = {"should_upsample": not args["skip_upsampling"], "context": args["context"]}
         dataset_args = {
             "dataset": args["dataset"],
             "pad_to_valid": args["valid_length"] == "pad",
@@ -92,7 +90,7 @@ def parse_cli_args() -> Args:
     parser = ArgumentParser(
         prog="python -m speechsep",
         description="A tool for separating speakers in a conversation. "
-        "The tool has 2 modes: training and prediction."
+        "The tool has 2 modes: training and prediction. "
         "See https://github.com/DominikStiller/dtu-speechsep for more documentation.",
     )
     subparsers = parser.add_subparsers()
@@ -117,7 +115,7 @@ def parse_cli_args() -> Args:
     parser_params.add_argument("--devices", type=int, default=1)
 
     # Training mode
-    parser_training = subparsers.add_parser("train", parents=[parser_params], help=SUPPRESS)
+    parser_training = subparsers.add_parser("train", parents=[parser_params])
     parser_training.set_defaults(mode="train")
 
     parser_training.add_argument("--batch-size", type=int, default=32)
@@ -135,4 +133,9 @@ def parse_cli_args() -> Args:
 
     parser_prediction.add_argument("--item", type=int, default=1)
 
-    return Args.from_dict(vars(parser.parse_args()))
+    args = vars(parser.parse_args())
+    if "mode" not in args:
+        parser.print_help()
+        exit(1)
+
+    return Args.from_dict(args)
