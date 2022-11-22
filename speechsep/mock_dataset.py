@@ -27,6 +27,7 @@ class SinusoidDataset(Dataset):
         n,
         example_length=8,
         sample_rate=8e3,
+        context=3,
         pad_to_valid=False,
         extend_to_valid=False,
         seed=42,
@@ -41,6 +42,7 @@ class SinusoidDataset(Dataset):
             n: number of examples
             example_length: length of each example [s]
             sample_rate: sample rate [Hz]
+            context: width of kernel in decoder
             pad_to_valid: pad with 0s to valid number of samples (for evaluation)
             extend_to_valid: extend sinusoid to valid number of samples(for training)
             seed: random seed for amplitude, frequency and phase
@@ -54,7 +56,7 @@ class SinusoidDataset(Dataset):
 
         self.n_samples = example_length * int(sample_rate)
         if pad_to_valid or extend_to_valid:
-            self.n_samples_valid = valid_n_samples(self.n_samples)
+            self.n_samples_valid = valid_n_samples(self.n_samples, context)
         else:
             self.n_samples_valid = self.n_samples
 
@@ -94,6 +96,7 @@ class SinusoidDataset(Dataset):
             n_examples,
             args.dataset_args["example_length"],
             args.dataset_args["sinusoid_sample_rate"],
+            args.model_args["context"],
             args.dataset_args["pad_to_valid"],
             args.dataset_args["extend_to_valid"],
             seed,

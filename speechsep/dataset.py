@@ -10,7 +10,9 @@ from speechsep.util import pad
 
 
 class LibrimixDataset(Dataset):
-    def __init__(self, metadata_file: str, example_length=8, pad_to_valid=False, limit=None):
+    def __init__(
+        self, metadata_file: str, example_length=8, context=3, pad_to_valid=False, limit=None
+    ):
         self.metadata = pd.read_csv(metadata_file)
         self.pad_to_valid = pad_to_valid
 
@@ -29,7 +31,7 @@ class LibrimixDataset(Dataset):
 
         self.n_samples = int(example_length * self.sample_rate)
         if pad_to_valid:
-            self.n_samples_valid = valid_n_samples(self.n_samples)
+            self.n_samples_valid = valid_n_samples(self.n_samples, context)
         else:
             self.n_samples_valid = self.n_samples
         self.ts = np.arange(0, self.n_samples_valid / self.sample_rate, 1 / self.sample_rate)
@@ -53,6 +55,7 @@ class LibrimixDataset(Dataset):
             cls(
                 metadata_file,
                 args.dataset_args["example_length"],
+                args.model_args["context"],
                 args.dataset_args["pad_to_valid"],
                 args.dataset_args["librimix_limit"],
             )

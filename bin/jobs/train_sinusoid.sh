@@ -1,17 +1,17 @@
 #!/bin/sh
 ### General options
 ### queue
-#BSUB -q "gpua40 gpua10"
+#BSUB -q gpua40
 ### job name
 #BSUB -J train_speechsep_sinusoid
 ### number of cores
-#BSUB -n 2
+#BSUB -n 4
 ### all cores on same host
 #BSUB -R "span[hosts=1]"
 ### 2 GPUs in exclusive mode
 #BSUB -gpu "num=2:mode=exclusive_process:mps=yes"
 ### walltime limit
-#BSUB -W 5:00
+#BSUB -W 10:00
 ### memory
 #BSUB -R "rusage[mem=10GB]"
 ### notify upon completion

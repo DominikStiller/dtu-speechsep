@@ -99,6 +99,7 @@ def parse_cli_args() -> Args:
     parser_params = ArgumentParser(add_help=False)
 
     parser_params.add_argument("--dataset", choices=["librimix", "sinusoid"], required=True)
+    parser_params.add_argument("--context", type=int, default=3)
     parser_params.add_argument("--skip-upsampling", action="store_true")
     parser_params.add_argument("--valid-length", choices=["pad", "extend", "none"], default="pad")
     parser_params.add_argument("--example-length", type=float, default=1)
@@ -120,6 +121,7 @@ def parse_cli_args() -> Args:
 
     parser_training.add_argument("--batch-size", type=int, default=32)
     parser_training.add_argument("--max-epochs", type=int, default=500)
+    parser_training.add_argument("--weight-decay", type=float, default=0.0)
     parser_training.add_argument("--log-every-n-steps", type=int, default=10)
     parser_training.add_argument("--checkpoint-every-n-epochs", type=int, default=5)
     parser_training.add_argument("--limit-val-batches", type=int, default=1)

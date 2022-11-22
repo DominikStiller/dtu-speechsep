@@ -44,6 +44,7 @@ def train(args):
 def predict(args):
     print(f"Loading checkpoint {args['checkpoint_path']}")
     model = LitDemucs.load_from_checkpoint(args["checkpoint_path"], args=args)
+    model.eval()
 
     print(f"Loading dataset")
     test_dataset = _create_test_dataset_from_args(args)

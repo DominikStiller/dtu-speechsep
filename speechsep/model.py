@@ -1,5 +1,6 @@
 import julius
 import torch
+import math
 import torch.nn.functional as F
 from torch import nn
 
@@ -10,6 +11,8 @@ from speechsep.util import center_trim
 class Demucs(nn.Module):
     def __init__(self, args: Args):
         super().__init__()
+
+        context = args.model_args["context"]
 
         self.encoders = nn.ModuleList(
             [
@@ -24,12 +27,12 @@ class Demucs(nn.Module):
         self.lstm = DemucsLSTM()
         self.decoders = nn.ModuleList(
             [
-                DemucsDecoder(2048, 1024),
-                DemucsDecoder(1024, 512),
-                DemucsDecoder(512, 256),
-                DemucsDecoder(256, 128),
-                DemucsDecoder(128, 64),
-                DemucsDecoder(64, 2, use_activation=False),
+                DemucsDecoder(2048, 1024, context),
+                DemucsDecoder(1024, 512, context),
+                DemucsDecoder(512, 256, context),
+                DemucsDecoder(256, 128, context),
+                DemucsDecoder(128, 64, context),
+                DemucsDecoder(64, 2, context, use_activation=False),
             ]
         )
 
@@ -109,10 +112,10 @@ class DemucsLSTM(nn.Module):
 
 
 class DemucsDecoder(nn.Module):
-    def __init__(self, in_channels: int, out_channels: int, use_activation=True):
+    def __init__(self, in_channels: int, out_channels: int, context: int, use_activation=True):
         super().__init__()
 
-        self.conv_1 = nn.Conv1d(in_channels, 2 * in_channels, kernel_size=3, stride=1)
+        self.conv_1 = nn.Conv1d(in_channels, 2 * in_channels, kernel_size=context, stride=1)
         self.conv_2 = nn.ConvTranspose1d(in_channels, out_channels, kernel_size=8, stride=4)
         self.use_activation = use_activation
 
@@ -135,7 +138,7 @@ def rescale_conv(conv, reference=0.1):
 
 
 # From https://github.com/facebookresearch/demucs/blob/v2/demucs/model.py#L145
-def valid_n_samples(n_samples):
+def valid_n_samples(n_samples, context):
     """
     Return the nearest valid number of samples to use with the model so that
     there is no time steps left over in a convolutions, e.g. for all
@@ -149,17 +152,15 @@ def valid_n_samples(n_samples):
 
     Args:
         n_samples: the original number of samples
+        context: width of kernel in decoder
 
     Returns:
         The nearest valid number of samples
     """
-    import math
-
     resample = False
     depth = 6
     kernel_size = 8
     stride = 4
-    context = 3
 
     if resample:
         n_samples *= 2
