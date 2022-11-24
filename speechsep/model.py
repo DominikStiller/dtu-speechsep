@@ -13,26 +13,27 @@ class Demucs(nn.Module):
         super().__init__()
 
         context = args.model_args["context"]
+        dropout_p = args.model_args["dropout_p"]
 
         self.encoders = nn.ModuleList(
             [
-                DemucsEncoder(1, 64),
-                DemucsEncoder(64, 128),
-                DemucsEncoder(128, 256),
-                DemucsEncoder(256, 512),
-                DemucsEncoder(512, 1024),
-                DemucsEncoder(1024, 2048),
+                DemucsEncoder(1, 64, dropout_p),
+                DemucsEncoder(64, 128, dropout_p),
+                DemucsEncoder(128, 256, dropout_p),
+                DemucsEncoder(256, 512, dropout_p),
+                DemucsEncoder(512, 1024, dropout_p),
+                DemucsEncoder(1024, 2048, dropout_p),
             ]
         )
-        self.lstm = DemucsLSTM()
+        self.lstm = DemucsLSTM(dropout_p)
         self.decoders = nn.ModuleList(
             [
-                DemucsDecoder(2048, 1024, context),
-                DemucsDecoder(1024, 512, context),
-                DemucsDecoder(512, 256, context),
-                DemucsDecoder(256, 128, context),
-                DemucsDecoder(128, 64, context),
-                DemucsDecoder(64, 2, context, use_activation=False),
+                DemucsDecoder(2048, 1024, context, dropout_p),
+                DemucsDecoder(1024, 512, context, dropout_p),
+                DemucsDecoder(512, 256, context, dropout_p),
+                DemucsDecoder(256, 128, context, dropout_p),
+                DemucsDecoder(128, 64, context, dropout_p),
+                DemucsDecoder(64, 2, context, dropout_p, use_activation=False),
             ]
         )
 
@@ -82,48 +83,67 @@ class Demucs(nn.Module):
 
 
 class DemucsEncoder(nn.Module):
-    def __init__(self, in_channels: int, out_channels: int):
+    def __init__(self, in_channels: int, out_channels: int, dropout_p: float):
         super().__init__()
 
         self.conv_1 = nn.Conv1d(in_channels, out_channels, kernel_size=8, stride=4)
+        self.dropout_1 = nn.Dropout(dropout_p)
         self.conv_2 = nn.Conv1d(out_channels, 2 * out_channels, kernel_size=1, stride=1)
+        self.dropout_2 = nn.Dropout(dropout_p)
 
     def forward(self, x):
         x = self.conv_1(x)
+        # Dropout should be placed before ReLU but after any other activation function
+        # Source: https://sebastianraschka.com/faq/docs/dropout-activation.html
+        x = self.dropout_1(x)
         x = F.relu(x)
         x = self.conv_2(x)
         x = F.glu(x, dim=1)  # split in channel dimension
+        x = self.dropout_2(x)
         return x
 
 
 class DemucsLSTM(nn.Module):
-    def __init__(self):
+    def __init__(self, dropout_p: float):
         super().__init__()
 
         self.lstm = nn.LSTM(input_size=2048, hidden_size=2048, num_layers=2, bidirectional=True)
         self.linear = nn.Linear(4096, 2048)
+        self.dropout = nn.Dropout(dropout_p)
 
     def forward(self, x):
         x = x.permute(2, 0, 1)  # move sequence first
         x, _ = self.lstm(x)
         x = self.linear(x)
         x = x.permute(1, 2, 0)
+        x = self.dropout(x)
         return x
 
 
 class DemucsDecoder(nn.Module):
-    def __init__(self, in_channels: int, out_channels: int, context: int, use_activation=True):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        context: int,
+        dropout_p: float,
+        use_activation=True,
+    ):
         super().__init__()
 
         self.conv_1 = nn.Conv1d(in_channels, 2 * in_channels, kernel_size=context, stride=1)
+        self.dropout_1 = nn.Dropout(dropout_p)
         self.conv_2 = nn.ConvTranspose1d(in_channels, out_channels, kernel_size=8, stride=4)
+        self.dropout_2 = nn.Dropout(dropout_p)
         self.use_activation = use_activation
 
     def forward(self, x):
         x = self.conv_1(x)
         x = F.glu(x, dim=1)  # split in channel dimension
+        x = self.dropout_1(x)
         x = self.conv_2(x)
         if self.use_activation:
+            x = self.dropout_2(x)
             x = F.relu(x)
         return x
 

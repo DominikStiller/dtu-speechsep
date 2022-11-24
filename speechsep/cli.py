@@ -22,7 +22,11 @@ class Args:
             # Use two dataloader worker per GPU
             args["num_workers"] = 2 * args["devices"]
 
-        model_args = {"should_upsample": not args["skip_upsampling"], "context": args["context"]}
+        model_args = {
+            "should_upsample": not args["skip_upsampling"],
+            "context": args["context"],
+            "dropout_p": args["dropout_p"],
+        }
         dataset_args = {
             "dataset": args["dataset"],
             "pad_to_valid": args["valid_length"] == "pad",
@@ -100,6 +104,7 @@ def parse_cli_args() -> Args:
 
     parser_params.add_argument("--dataset", choices=["librimix", "sinusoid"], required=True)
     parser_params.add_argument("--context", type=int, default=3)
+    parser_params.add_argument("--dropout-p", type=float, default=0)
     parser_params.add_argument("--skip-upsampling", action="store_true")
     parser_params.add_argument("--valid-length", choices=["pad", "extend", "none"], default="pad")
     parser_params.add_argument("--example-length", type=float, default=1)
