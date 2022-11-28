@@ -109,14 +109,16 @@ class DemucsLSTM(nn.Module):
 
         self.lstm = nn.LSTM(input_size=2048, hidden_size=2048, num_layers=2, bidirectional=True)
         self.linear = nn.Linear(4096, 2048)
-        self.dropout = nn.Dropout(dropout_p)
+        self.dropout_1 = nn.Dropout(dropout_p)
+        self.dropout_2 = nn.Dropout(dropout_p)
 
     def forward(self, x):
         x = x.permute(2, 0, 1)  # move sequence first
         x, _ = self.lstm(x)
+        x = self.dropout_1(x)
         x = self.linear(x)
         x = x.permute(1, 2, 0)
-        x = self.dropout(x)
+        x = self.dropout_2(x)
         return x
 
 

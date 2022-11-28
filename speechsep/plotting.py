@@ -54,7 +54,9 @@ def plot_separated_with_truth(
     assert len(y.shape) == 2 and y.shape[0] == 2
     assert len(y_pred.shape) == 2 and y_pred.shape[0] == 2
 
-    fig, axs = plt.subplots(3, 1, figsize=(8, 10), tight_layout=True, dpi=300)
+    fig, axs = plt.subplots(
+        3, 1, figsize=(8, 10), sharex=True, sharey=True, tight_layout=True, dpi=300
+    )
 
     ax = axs[0]
     ax.fill_between(ts, x[0], color="black")

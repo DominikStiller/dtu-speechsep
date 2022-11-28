@@ -19,7 +19,7 @@ if __name__ == "__main__":
     # Ensure that all examples in mini dataset are sufficiently long
     metadata = metadata[metadata["length"] >= dataset_min_length * dataset_sample_rate]
     metadata_mini = (
-        metadata.sample(dataset_mini_size, random_state=42)
+        metadata.sample(min(dataset_mini_size, len(metadata)), random_state=42)
         .reset_index(drop=True)
         .rename(
             columns={
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     os.makedirs(f"{dataset_mini_path}/noise", exist_ok=True)
 
     # Copy examples
-    for example in tqdm(metadata_mini.itertuples(), total=dataset_mini_size):
+    for example in tqdm(metadata_mini.itertuples(), total=len(metadata_mini)):
         shutil.copy2(example.mixture_path_src, example.mixture_path)
         shutil.copy2(example.source_1_path_src, example.source_1_path)
         shutil.copy2(example.source_2_path_src, example.source_2_path)
