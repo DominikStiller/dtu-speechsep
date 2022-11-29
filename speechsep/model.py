@@ -15,6 +15,12 @@ class Demucs(nn.Module):
         context = args.model_args["context"]
         dropout_p = args.model_args["dropout_p"]
 
+        self.should_normalize = args.model_args["should_normalize"]
+        self.should_upsample = args.model_args["should_upsample"]
+        if self.should_upsample:
+            self.upsample = julius.resample.ResampleFrac(1, 2)
+            self.downsample = julius.resample.ResampleFrac(2, 1)
+
         self.encoders = nn.ModuleList(
             [
                 DemucsEncoder(1, 64, dropout_p),
@@ -42,11 +48,6 @@ class Demucs(nn.Module):
             if isinstance(sub, (nn.Conv1d, nn.ConvTranspose1d)):
                 rescale_conv(sub)
 
-        self.should_upsample = args.model_args["should_upsample"]
-        if self.should_upsample:
-            self.upsample = julius.resample.ResampleFrac(1, 2)
-            self.downsample = julius.resample.ResampleFrac(2, 1)
-
     def forward(self, x):
         """
         Forward-pass of the Demucs model. Only n_channels = 1 is supported.
@@ -58,6 +59,11 @@ class Demucs(nn.Module):
             Separated signal for both speakers, shape (n_batch, 2, n_samples)
         """
         skip_activations: list[torch.Tensor] = []
+
+        if self.should_normalize:
+            mean = x.mean(dim=-1, keepdim=True)
+            std = x.std(dim=-1, keepdim=True) + 1e-5
+            x = (x - mean) / std
 
         if self.should_upsample:
             x = self.upsample(x)
@@ -78,6 +84,9 @@ class Demucs(nn.Module):
 
         if self.should_upsample:
             x = self.downsample(x)
+        
+        if self.should_normalize:
+            x = x * std + mean
 
         return x
 

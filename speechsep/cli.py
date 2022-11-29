@@ -24,6 +24,7 @@ class Args:
 
         model_args = {
             "should_upsample": not args["skip_upsampling"],
+            "should_normalize": not args["skip_normalization"],
             "context": args["context"],
             "dropout_p": args["dropout_p"],
         }
@@ -106,6 +107,7 @@ def parse_cli_args() -> Args:
     parser_params.add_argument("--context", type=int, default=3)
     parser_params.add_argument("--dropout-p", type=float, default=0)
     parser_params.add_argument("--skip-upsampling", action="store_true")
+    parser_params.add_argument("--skip-normalization", action="store_true")
     parser_params.add_argument("--valid-length", choices=["pad", "extend", "none"], default="pad")
     parser_params.add_argument("--example-length", type=float, default=1)
     parser_params.add_argument("--librimix-train-metadata", action="extend", nargs="+", type=str)
