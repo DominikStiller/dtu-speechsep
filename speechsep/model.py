@@ -14,6 +14,7 @@ class Demucs(nn.Module):
 
         context = args.model_args["context"]
         dropout_p = args.model_args["dropout_p"]
+        lstm_layers = args.model_args["lstm_layers"]
 
         self.should_normalize = args.model_args["should_normalize"]
         self.should_upsample = args.model_args["should_upsample"]
@@ -31,7 +32,7 @@ class Demucs(nn.Module):
                 DemucsEncoder(1024, 2048, dropout_p),
             ]
         )
-        self.lstm = DemucsLSTM(dropout_p)
+        self.lstm = DemucsLSTM(lstm_layers, dropout_p)
         self.decoders = nn.ModuleList(
             [
                 DemucsDecoder(2048, 1024, context, dropout_p),
@@ -84,7 +85,7 @@ class Demucs(nn.Module):
 
         if self.should_upsample:
             x = self.downsample(x)
-        
+
         if self.should_normalize:
             x = x * std + mean
 
@@ -113,10 +114,12 @@ class DemucsEncoder(nn.Module):
 
 
 class DemucsLSTM(nn.Module):
-    def __init__(self, dropout_p: float):
+    def __init__(self, lstm_layers: int, dropout_p: float):
         super().__init__()
 
-        self.lstm = nn.LSTM(input_size=2048, hidden_size=2048, num_layers=2, bidirectional=True)
+        self.lstm = nn.LSTM(
+            input_size=2048, hidden_size=2048, num_layers=lstm_layers, bidirectional=True
+        )
         self.linear = nn.Linear(4096, 2048)
         self.dropout_1 = nn.Dropout(dropout_p)
         self.dropout_2 = nn.Dropout(dropout_p)

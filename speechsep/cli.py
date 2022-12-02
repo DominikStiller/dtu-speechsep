@@ -27,6 +27,7 @@ class Args:
             "should_normalize": not args["skip_normalization"],
             "context": args["context"],
             "dropout_p": args["dropout_p"],
+            "lstm_layers": args["lstm_layers"],
         }
         dataset_args = {
             "dataset": args["dataset"],
@@ -106,6 +107,7 @@ def parse_cli_args() -> Args:
     parser_params.add_argument("--dataset", choices=["librimix", "sinusoid"], required=True)
     parser_params.add_argument("--context", type=int, default=3)
     parser_params.add_argument("--dropout-p", type=float, default=0)
+    parser_params.add_argument("--lstm-layers", type=int, default=2)
     parser_params.add_argument("--skip-upsampling", action="store_true")
     parser_params.add_argument("--skip-normalization", action="store_true")
     parser_params.add_argument("--valid-length", choices=["pad", "extend", "none"], default="pad")
@@ -114,7 +116,7 @@ def parse_cli_args() -> Args:
     parser_params.add_argument("--librimix-val-metadata", type=str)
     parser_params.add_argument("--librimix-test-metadata", type=str)
     parser_params.add_argument("--librimix-limit", type=int)
-    parser_params.add_argument("--sinusoid-n-examples", type=int, default=2**15)
+    parser_params.add_argument("--sinusoid-n-examples", type=int, default=2 ** 15)
     parser_params.add_argument("--sinusoid-sample-rate", type=int, default=int(8e3))
     parser_params.add_argument("--sinusoid-seed", type=int, default=42)
     parser_params.add_argument("--checkpoint-path", type=str)
