@@ -82,7 +82,7 @@ def predict(args):
     # plt.show()
 
     output_path = f"data/predict/{args.dataset_args['dataset']}"
-    save_plot("waveforms", output_path, fig, "png")
+    save_plot("waveforms", output_path, fig, "pdf", transparent=True)
     save_as_audio(x, f"{output_path}/x.wav")
     save_as_audio(y, f"{output_path}/y.wav")
     save_as_audio(y_pred, f"{output_path}/y_pred.wav")

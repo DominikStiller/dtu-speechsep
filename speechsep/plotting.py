@@ -20,6 +20,11 @@ sb.set(
 )
 
 
+COLOR_DTU_NAVY = "#030F4F"
+COLOR_DTU_RED = "#990000"
+COLOR_DTU_ORANGE = "#FC7634"
+
+
 def plot_waveform(waveform, sample_rate):
     # Assume mono signal
     waveform = waveform.numpy()[0]
@@ -65,14 +70,14 @@ def plot_separated_with_truth(
     ax = axs[1]
     sisdr = scale_invariant_signal_noise_ratio(y_pred[0], y[0])
     ax.fill_between(ts, y[0], label="Ground truth", color="black")
-    ax.fill_between(ts, y_pred[0], label="Prediction", alpha=0.6, color="C1")
+    ax.fill_between(ts, y_pred[0], label="Prediction", alpha=0.6, color=COLOR_DTU_ORANGE)
     ax.set_title(f"Speaker 1 (SI-SDR: {sisdr:.2f} dB)")
     ax.legend()
 
     ax = axs[2]
     sisdr = scale_invariant_signal_noise_ratio(y_pred[1], y[1])
     ax.fill_between(ts, y[1], label="Ground truth", color="black")
-    ax.fill_between(ts, y_pred[1], label="Prediction", alpha=0.6, color="C1")
+    ax.fill_between(ts, y_pred[1], label="Prediction", alpha=0.6, color=COLOR_DTU_RED)
     ax.set_title(f"Speaker 2 (SI-SDR: {sisdr:.2f} dB)")
     ax.legend()
 
@@ -94,7 +99,7 @@ def format_plot(
     fig.tight_layout()
 
 
-def save_plot(name: str, plots_folder="data/plots", fig=None, type="pdf"):
+def save_plot(name: str, plots_folder="data/plots", fig=None, type="pdf", transparent=False):
     os.makedirs(
         plots_folder,
         exist_ok=True,
@@ -107,6 +112,7 @@ def save_plot(name: str, plots_folder="data/plots", fig=None, type="pdf"):
         dpi=450,
         bbox_inches="tight",
         pad_inches=0.01,
+        transparent=transparent,
     )
 
     plt.close()
