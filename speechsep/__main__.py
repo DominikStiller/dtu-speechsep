@@ -10,7 +10,7 @@ from speechsep.dataset import LibrimixDataset
 from speechsep.lightning import LitDemucs
 from speechsep.mock_dataset import SinusoidDataset
 from speechsep.plotting import plot_separated_with_truth, save_plot
-from speechsep.util import center_trim, save_as_audio
+from speechsep.util import center_trim, hp_filter, save_as_audio
 
 
 def train(args):
@@ -52,9 +52,16 @@ def predict(args):
     ts = dataloader.dataset.ts
     dataloader = iter(dataloader)
 
-    print("Predicting")
+    # Skip to the item we want to predict
     for _ in range(args["item"]):
         x, y = next(dataloader)
+
+    if args["hp_filter"]:
+        print("Filtering")
+        x = hp_filter(x)
+        y = hp_filter(y)
+
+    print("Predicting")
     y_pred = model.forward(x)
 
     # Trim to unpadded length

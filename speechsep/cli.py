@@ -120,7 +120,7 @@ def parse_cli_args() -> Args:
     parser_params.add_argument("--librimix-val-metadata", type=str)
     parser_params.add_argument("--librimix-test-metadata", type=str)
     parser_params.add_argument("--librimix-limit", type=int)
-    parser_params.add_argument("--sinusoid-n-examples", type=int, default=2 ** 15)
+    parser_params.add_argument("--sinusoid-n-examples", type=int, default=2**15)
     parser_params.add_argument("--sinusoid-sample-rate", type=int, default=int(8e3))
     parser_params.add_argument("--sinusoid-seed", type=int, default=42)
     parser_params.add_argument("--checkpoint-path", type=str)
@@ -147,6 +147,7 @@ def parse_cli_args() -> Args:
     parser_prediction.set_defaults(mode="predict")
 
     parser_prediction.add_argument("--item", type=int, default=1)
+    parser_prediction.add_argument("--hp-filter", action="store_true")
 
     args = vars(parser.parse_args())
     if "mode" not in args:

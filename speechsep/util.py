@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Union
 
 import numpy as np
+import scipy
 import torch
 import torch.nn.functional as F
 import torchaudio
@@ -22,7 +23,9 @@ def center_trim(to_trim: torch.Tensor, target: torch.Tensor, dim=-1):
     return to_trim.narrow(dim, (to_trim.shape[dim] - target.shape[dim]) // 2, target.shape[dim])
 
 
-def pad(to_pad: Union[np.ndarray, torch.Tensor], target_length: int):
+def pad(
+    to_pad: Union[np.ndarray, torch.Tensor], target_length: int
+) -> Union[np.ndarray, torch.Tensor]:
     delta = int(target_length - to_pad.shape[-1])
     padding_left = max(0, delta) // 2
     padding_right = delta - padding_left
@@ -31,6 +34,13 @@ def pad(to_pad: Union[np.ndarray, torch.Tensor], target_length: int):
         return np.pad(to_pad, (padding_left, padding_right))
     elif isinstance(to_pad, torch.Tensor):
         return F.pad(to_pad, (padding_left, padding_right))
+
+
+def hp_filter(to_filter: torch.Tensor) -> torch.Tensor:
+    """Apply highpass filter"""
+    with open("data/hp_filter_coeffs.txt") as f:
+        coeffs = [float(coeff) for coeff in f.read().strip().split(",")]
+    return torch.Tensor(scipy.signal.lfilter(coeffs, 1, to_filter))
 
 
 def save_as_audio(x, out_path: str):

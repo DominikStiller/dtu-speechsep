@@ -181,5 +181,6 @@ fabric.properties
 *.code-workspace
 
 plots/
-data/
+data/*
+!data/hp_filter_coeffs.txt
 bin/private/
