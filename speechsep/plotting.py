@@ -79,7 +79,11 @@ def plot_separated_with_truth(
     ax.fill_between(ts, y[1], label="Ground truth", color="black")
     ax.fill_between(ts, y_pred[1], label="Prediction", alpha=0.6, color=COLOR_DTU_RED)
     ax.set_title(f"Speaker 2 (SI-SDR: {sisdr:.2f} dB)")
+    ax.set_xlabel("Time [s]")
     ax.legend()
+
+    for ax in axs:
+        ax.set_ylabel("Amplitude")
 
     return fig
 

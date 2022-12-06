@@ -57,9 +57,12 @@ def predict(args):
         x, y = next(dataloader)
     y_pred = model.forward(x)
 
-    x = center_trim(x, target=y_pred).detach()
-    y = center_trim(y, target=y_pred).detach()
-    y_pred = y_pred.detach()
+    # Trim to unpadded length
+    trim_dummy = torch.zeros((test_dataset.n_samples,))
+
+    x = center_trim(x, target=trim_dummy).detach()
+    y = center_trim(y, target=trim_dummy).detach()
+    y_pred = center_trim(y_pred, target=trim_dummy).detach()
 
     # Flip channels if necessary since network may change order
     y_pred_flipped = y_pred.flip(dims=[1])
@@ -77,7 +80,7 @@ def predict(args):
         x,
         y,
         y_pred,
-        center_trim(torch.from_numpy(ts), target=y_pred),
+        ts[..., : y_pred.shape[-1]],
     )
     # plt.show()
 
