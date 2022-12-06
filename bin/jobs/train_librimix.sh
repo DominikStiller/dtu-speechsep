@@ -1,7 +1,9 @@
 #!/bin/sh
 ### General options
 ### queue
-#BSUB -q gpuv100
+#BSUB -q gpua100
+### select GPU with enough memory
+#BSUB -R "select[gpu32gb || gpu40gb || gpu80gb]"
 ### job name
 #BSUB -J train_speechsep_librimix
 ### number of cores
