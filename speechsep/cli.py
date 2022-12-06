@@ -48,12 +48,16 @@ class Args:
         }
 
         if args["mode"] == "train":
+            limit_val_batches = args["limit_val_batches"]
+            if limit_val_batches and limit_val_batches > 1.0:
+                limit_val_batches = int(limit_val_batches)
+
             trainer_args = {
                 "max_epochs": args["max_epochs"],
                 "log_every_n_steps": args["log_every_n_steps"],
                 "accelerator": "gpu" if (args["gpu"] and torch.cuda.is_available()) else None,
                 "devices": args["devices"],
-                "limit_val_batches": args["limit_val_batches"],
+                "limit_val_batches": limit_val_batches,
                 "val_check_interval": args["val_check_interval"],
             }
         else:
@@ -133,7 +137,7 @@ def parse_cli_args() -> Args:
     parser_training.add_argument("--weight-decay", type=float, default=0.0)
     parser_training.add_argument("--log-every-n-steps", type=int, default=10)
     parser_training.add_argument("--checkpoint-every-n-epochs", type=int, default=5)
-    parser_training.add_argument("--limit-val-batches", type=int, default=1)
+    parser_training.add_argument("--limit-val-batches", type=float)
     parser_training.add_argument("--val-check-interval", type=float, default=1.0)
     parser_training.add_argument("--cosine-anneal-period", type=int)
     parser_training.add_argument("--reduce-on-plateau-metric", type=str)
