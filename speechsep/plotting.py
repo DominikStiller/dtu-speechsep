@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sb
 import torch
+from matplotlib.ticker import AutoMinorLocator
 from torchmetrics.functional import scale_invariant_signal_noise_ratio
 
 # Initialize seaborn formatting once module is loaded
@@ -88,14 +89,11 @@ def plot_separated_with_truth(
     return fig
 
 
-def format_plot(
-    xlocator=matplotlib.ticker.AutoMinorLocator(),
-    ylocator=matplotlib.ticker.AutoMinorLocator(),
-):
+def format_plot():
     fig = plt.gcf()
     for ax in fig.axes:
-        ax.get_xaxis().set_minor_locator(xlocator)
-        ax.get_yaxis().set_minor_locator(ylocator)
+        ax.get_xaxis().set_minor_locator(AutoMinorLocator())
+        ax.get_yaxis().set_minor_locator(AutoMinorLocator())
         ax.grid(b=True, which="major", linewidth=1.0)
         ax.grid(b=True, which="minor", linewidth=0.5, linestyle="-.")
 
