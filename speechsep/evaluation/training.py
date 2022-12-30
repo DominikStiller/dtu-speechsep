@@ -21,6 +21,8 @@ VERSION_NAMES = {
     "37+38": "$B=64, p=0.2$",
 }
 
+PLOT_FOLDER = "data/evaluation/training/plots"
+
 
 def plot_single_training(log: pd.DataFrame, metrics: list[str], params: dict):
     fig, (ax_loss, ax_metrics) = plt.subplots(2, 1, figsize=(14, 5), sharex="all")
@@ -49,7 +51,7 @@ def plot_single_training(log: pd.DataFrame, metrics: list[str], params: dict):
 
     format_plot()
     plt.show()
-    save_plot(f"training_{params['versions']}", params["plot_folder"], fig)
+    save_plot(f"training_{params['versions']}", PLOT_FOLDER, fig)
 
 
 def plot_multiple_trainings(logs: list[pd.DataFrame], paramss: list[dict]):
@@ -72,7 +74,7 @@ def plot_multiple_trainings(logs: list[pd.DataFrame], paramss: list[dict]):
 
     format_plot()
     plt.show()
-    save_plot("training_losses", params["plot_folder"], fig)
+    save_plot("training_losses", PLOT_FOLDER, fig)
 
 
 def _smoothen(data: pd.Series, metric_name: str):
@@ -180,7 +182,6 @@ if __name__ == "__main__":
 
     for versions in sets:
         params = {
-            "plot_folder": model_folder_base / "plots",
             "versions": versions,
             "dataset": model_folder_base.parts[-1],
         }
