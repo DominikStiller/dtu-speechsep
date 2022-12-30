@@ -29,4 +29,4 @@ module load cuda/11.7.1
 
 nvidia-smi
 
-bin/private/train_librimix.sh
+bin/librimix/train.sh
