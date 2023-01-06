@@ -4,6 +4,7 @@ This is the repository for the [DTU 02456 Deep Learning](https://kurser.dtu.dk/c
 Links:
 * See the [synopsis](docs/synopsis.pdf) for the outline of the project
 * See the [poster](docs/poster.pdf) for a summary of the results
+* See the [paper](docs/paper.pdf) for the full results
 * See the [developer's guidelines](docs/CONTRIBUTING.md) if you want to contribute
 
 
